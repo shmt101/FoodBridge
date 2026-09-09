@@ -1,0 +1,15 @@
+[Unit]
+Description=FoodBridge static project website
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/winproject-2026s2e/htdocs/2026s2e.winproject.com.au
+ExecStart=/usr/bin/python3 -m http.server 8096 --bind 0.0.0.0 --directory /home/winproject-2026s2e/htdocs/2026s2e.winproject.com.au
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target
