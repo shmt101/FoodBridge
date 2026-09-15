@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 48" role="img" aria-labelledby="title">
+  <title id="title">FoodBridge bridge and leaf mark</title>
+  <path d="M5 35h50" fill="none" stroke="#073b2a" stroke-width="4" stroke-linecap="round"/>
+  <path d="M10 35V25c5-10 12-15 20-15s15 5 20 15v10" fill="none" stroke="#073b2a" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M17 35v-7m26 7v-7" fill="none" stroke="#16a34a" stroke-width="4" stroke-linecap="round"/>
+  <path d="M29.5 9C31 3.5 35.5 1.5 41 3c-1.6 5.5-5.5 8.2-11.5 6Z" fill="#22c55e"/>
+  <path d="M30 10v8" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="10" cy="39.5" r="3" fill="#16a34a"/>
+  <circle cx="50" cy="39.5" r="3" fill="#16a34a"/>
+</svg>

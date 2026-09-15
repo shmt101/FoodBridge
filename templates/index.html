@@ -1,0 +1,259 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="FoodBridge is a web-based platform connecting food donors, volunteer drivers and community food relief organisations to coordinate surplus food rescue and redistribution.">
+  <meta name="theme-color" content="#073b2a">
+  <script>document.documentElement.classList.add('js');</script>
+  <meta property="og:title" content="FoodBridge | Surplus Food Rescue & Redistribution">
+  <meta property="og:description" content="A proposed open-source platform coordinating the surplus food rescue lifecycle.">
+  <meta property="og:type" content="website">
+  <title>FoodBridge | Surplus Food Rescue &amp; Redistribution</title>
+  <link rel="icon" href="{% static 'assets/images/favicon.svg' %}" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet">
+  <link href="{% static 'assets/vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="{% static 'assets/css/style.css' %}?v=20260820-2" rel="stylesheet">
+</head>
+<body data-bs-spy="scroll" data-bs-target="#mainNav" data-bs-root-margin="-20% 0px -70%">
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <nav id="mainNav" class="navbar navbar-expand-lg fixed-top" aria-label="Primary navigation">
+    <div class="container">
+      <a class="navbar-brand" href="#home" aria-label="FoodBridge home">
+        <span class="brand-mark"><img src="{% static 'assets/images/foodbridge-mark.svg' %}" alt="" width="46" height="38"></span>
+        <span>Food<span>Bridge</span></span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu" aria-controls="navbarMenu" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarMenu">
+        <ul class="navbar-nav ms-auto align-items-lg-center">
+          <li class="nav-item"><a class="nav-link" href="#home">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+        <li class="nav-item ms-lg-2"><a class="btn btn-nav" href="#team">Meet the Team</a></li>
+        </ul>
+        <form class="d-flex nav-search ms-lg-3" role="search" action="{% url 'donations:live' %}" method="get">
+          <input class="form-control form-control-sm" type="search" name="q" placeholder="Search donations…" aria-label="Search donations">
+          <button class="btn btn-sm btn-nav" type="submit"><i class="bi bi-search"></i></button>
+        </form>
+        <ul class="navbar-nav align-items-lg-center ms-lg-3">
+          <li class="nav-item ms-lg-2"><a class="btn btn-nav" href="{% url 'donations:live' %}">Live Donations</a></li>
+          {% if user.is_authenticated %}
+            <li class="nav-item ms-lg-2"><a class="btn btn-nav" href="{% url 'accounts:dashboard' %}">Dashboard</a></li>
+            <li class="nav-item ms-lg-2"><a class="btn btn-nav" href="{% url 'accounts:profile' %}">Profile</a></li>
+            <li class="nav-item ms-lg-2">
+              <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">{% csrf_token %}
+                <button type="submit" class="btn btn-nav">Log out</button>
+              </form>
+            </li>
+          {% else %}
+            <li class="nav-item ms-lg-2"><a class="btn btn-nav" href="{% url 'accounts:login' %}">Log in</a></li>
+            <li class="nav-item ms-lg-2"><a class="btn btn-primary-custom" href="{% url 'accounts:signup' %}">Sign up</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <header id="home" class="hero-section">
+    <div class="hero-orb orb-one" aria-hidden="true"></div>
+    <div class="hero-orb orb-two" aria-hidden="true"></div>
+    <div class="container position-relative">
+      <div class="row align-items-center g-5 min-vh-100 py-5">
+        <div class="col-lg-6 hero-copy reveal">
+          <h1>Rescuing surplus food.<br><em>Connecting communities.</em></h1>
+          <p class="hero-lead">FoodBridge is a proposed digital food rescue and redistribution platform connecting local food donors, volunteer drivers and community food relief organisations.</p>
+          <div class="d-flex flex-wrap gap-3 hero-actions">
+            <a class="btn btn-primary-custom" href="#about">Explore FoodBridge <i class="bi bi-arrow-down" aria-hidden="true"></i></a>
+            <a class="btn btn-secondary-custom" href="#team">Meet the Team</a>
+          </div>
+          <div class="hero-trust">
+            <div class="trust-icons" aria-hidden="true"><span><i class="bi bi-shop"></i></span><span><i class="bi bi-truck"></i></span><span><i class="bi bi-house-heart"></i></span></div>
+            <p><strong>One connected platform</strong><br>Donors • Volunteers • Pantries</p>
+          </div>
+        </div>
+        <div class="col-lg-6 reveal reveal-delay">
+          <div class="hero-visual">
+            <div class="status-chip chip-top"><span class="pulse"></span><span><strong>Smart matching</strong><small>Connecting supply with need</small></span></div>
+            <img src="{% static 'assets/images/foodbridge-hero.png' %}" alt="Illustration of volunteers transferring fresh surplus food to an electric delivery van for community redistribution" width="1200" height="1280" fetchpriority="high">
+            <div class="status-chip chip-bottom"><i class="bi bi-check-circle-fill" aria-hidden="true"></i><span><strong>Impact captured</strong><small>Every rescue can be measured</small></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section id="about" class="section-pad intro-section">
+      <div class="container">
+        <div class="row align-items-center g-5">
+          <div class="col-lg-5 reveal">
+            <div class="section-label">About the project</div>
+            <h2>Turning surplus into <span>shared value.</span></h2>
+          </div>
+          <div class="col-lg-7 reveal">
+            <p class="lead-copy">FoodBridge is an open-source, web-based surplus food matching and logistics management platform being designed for community food relief organisations.</p>
+            <p class="text-muted-custom mb-0">It aims to replace fragmented phone calls, group messages and manual coordination with a transparent workflow—helping edible food reach community organisations quickly, before it expires, while making every step trackable and measurable.</p>
+          </div>
+        </div>
+        <div class="connection-strip reveal" aria-label="FoodBridge participant network">
+          <div><span class="mini-icon"><i class="bi bi-building"></i></span><strong>Food donors</strong><small>List available surplus</small></div><i class="bi bi-arrow-right connector" aria-hidden="true"></i>
+          <div><span class="mini-icon"><i class="bi bi-person-raised-hand"></i></span><strong>Volunteer drivers</strong><small>Collect and transport</small></div><i class="bi bi-arrow-right connector" aria-hidden="true"></i>
+          <div><span class="mini-icon"><i class="bi bi-house-heart"></i></span><strong>Community pantries</strong><small>Receive food safely</small></div><i class="bi bi-arrow-right connector" aria-hidden="true"></i>
+          <div><span class="mini-icon"><i class="bi bi-grid"></i></span><strong>Coordinators</strong><small>Oversee the network</small></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="problem" class="section-pad problem-section">
+      <div class="container">
+        <div class="section-heading text-center reveal">
+          <div class="section-label justify-content-center">Why FoodBridge?</div>
+          <h2>Good food should never be lost to <span>poor coordination.</span></h2>
+          <p>Current food rescue operations can be slowed by fragmented communication, disconnected logistics and limited visibility.</p>
+        </div>
+        <div class="row g-4">
+          <div class="col-md-4 reveal"><article class="problem-card h-100"><span class="card-number">01</span><div class="icon-box coral"><i class="bi bi-chat-dots"></i></div><h3>Informal Communication</h3><p>Surplus availability is often shared through calls and group messages. Time-sensitive food may expire before a volunteer can be organised.</p></article></div>
+          <div class="col-md-4 reveal"><article class="problem-card h-100"><span class="card-number">02</span><div class="icon-box amber"><i class="bi bi-signpost-split"></i></div><h3>Uncoordinated Logistics</h3><p>Donors, drivers, pickup windows and pantry capacity lack real-time coordination—leading to missed pickups, delays and duplicate arrangements.</p></article></div>
+          <div class="col-md-4 reveal"><article class="problem-card h-100"><span class="card-number">03</span><div class="icon-box blue"><i class="bi bi-bar-chart"></i></div><h3>Limited Impact Reporting</h3><p>Organisations can struggle to record food rescued, meals provided and the evidence needed for reporting, funding and partnerships.</p></article></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="solution" class="section-pad solution-section">
+      <div class="container">
+        <div class="row align-items-end mb-5 g-4">
+          <div class="col-lg-7 reveal"><div class="section-label light-label">Our solution</div><h2>One platform. One connected <span>rescue lifecycle.</span></h2></div>
+          <div class="col-lg-5 reveal"><p>FoodBridge is designed to coordinate each step from the moment food becomes available to the moment its community impact is recorded.</p></div>
+        </div>
+        <div class="workflow reveal">
+          <div class="workflow-line" aria-hidden="true"><span></span></div>
+          <article class="workflow-step"><div class="step-icon"><span>1</span><i class="bi bi-clipboard-plus"></i></div><h3>Listing</h3><p>Donors post food type, quantity, photos, location and pickup window.</p><ul><li>Surplus details</li><li>Photos &amp; timing</li></ul></article>
+          <article class="workflow-step"><div class="step-icon"><span>2</span><i class="bi bi-diagram-3"></i></div><h3>Matching</h3><p>The system evaluates availability, proximity, requirements and capacity.</p><ul><li>Suitable volunteers</li><li>Proximity logic</li></ul></article>
+          <article class="workflow-step"><div class="step-icon"><span>3</span><i class="bi bi-box-seam"></i></div><h3>Pickup</h3><p>The volunteer accepts, completes safety checks and records collection.</p><ul><li>Task acceptance</li><li>Safety verification</li></ul></article>
+          <article class="workflow-step"><div class="step-icon"><span>4</span><i class="bi bi-truck"></i></div><h3>Delivery</h3><p>Food reaches the selected pantry and the recipient confirms arrival.</p><ul><li>Live task status</li><li>Recipient confirmation</li></ul></article>
+          <article class="workflow-step"><div class="step-icon"><span>5</span><i class="bi bi-graph-up-arrow"></i></div><h3>Impact</h3><p>Rescues, kilograms, meal equivalents and collections are recorded.</p><ul><li>Measurable results</li><li>Exportable reports</li></ul></article>
+        </div>
+        <div class="solution-note reveal"><i class="bi bi-lightning-charge-fill"></i><span><strong>Designed for time-sensitive coordination</strong> — helping the right volunteer reach the right pickup at the right time.</span></div>
+      </div>
+    </section>
+
+    <section id="users" class="section-pad users-section">
+      <div class="container">
+        <div class="section-heading text-center reveal"><div class="section-label justify-content-center">Built around people</div><h2>Four users. <span>One shared mission.</span></h2><p>Each role receives a focused experience for the part they play in a successful food rescue.</p></div>
+        <div class="row g-4">
+          <div class="col-lg-3 col-sm-6 reveal"><article class="user-card h-100"><div class="user-icon"><i class="bi bi-shop-window"></i></div><h3>Food Donors</h3><p class="user-examples">Cafes • Restaurants • Supermarkets • Caterers</p><ul class="check-list"><li>Fast food listing</li><li>Photo upload</li><li>Pickup details</li><li>CSR impact reporting</li></ul></article></div>
+          <div class="col-lg-3 col-sm-6 reveal"><article class="user-card h-100"><div class="user-icon"><i class="bi bi-bicycle"></i></div><h3>Volunteer Drivers</h3><p class="user-examples">Mobile-first rescue coordination</p><ul class="check-list"><li>Availability status</li><li>Task notifications</li><li>Navigation &amp; checklist</li><li>Pickup confirmation</li></ul></article></div>
+          <div class="col-lg-3 col-sm-6 reveal"><article class="user-card h-100"><div class="user-icon"><i class="bi bi-house-heart"></i></div><h3>Receiving Pantries</h3><p class="user-examples">Community food relief organisations</p><ul class="check-list"><li>Incoming delivery tracking</li><li>Demand requests</li><li>Delivery confirmation</li><li>Inventory coordination</li></ul></article></div>
+          <div class="col-lg-3 col-sm-6 reveal"><article class="user-card h-100"><div class="user-icon"><i class="bi bi-person-gear"></i></div><h3>Coordinators</h3><p class="user-examples">Operational oversight and reporting</p><ul class="check-list"><li>Monitor rescues</li><li>Manage users</li><li>Track logistics</li><li>Review impact data</li></ul></article></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="section-pad features-section">
+      <div class="container">
+        <div class="row g-5">
+          <div class="col-lg-4 reveal"><div class="sticky-copy"><div class="section-label">Platform capabilities</div><h2>Purpose-built for <span>food rescue.</span></h2><p>FoodBridge’s proposed MVP brings identity, logistics, verification and impact reporting into one accessible system.</p><div class="feature-highlight"><i class="bi bi-phone"></i><span><strong>Responsive by design</strong><small>From office desktop to pickup on the move</small></span></div></div></div>
+          <div class="col-lg-8"><div class="feature-grid">
+            <div class="feature-item reveal"><i class="bi bi-shield-lock"></i><span>User Authentication</span></div><div class="feature-item reveal"><i class="bi bi-person-badge"></i><span>Role-Based Access</span></div><div class="feature-item reveal"><i class="bi bi-basket"></i><span>Food Listings</span></div>
+            <div class="feature-item reveal"><i class="bi bi-image"></i><span>Photo Upload</span></div><div class="feature-item reveal"><i class="bi bi-clock"></i><span>Pickup Windows</span></div><div class="feature-item reveal"><i class="bi bi-toggle-on"></i><span>Volunteer Availability</span></div>
+            <div class="feature-item reveal"><i class="bi bi-geo-alt"></i><span>Proximity Matching</span></div><div class="feature-item reveal"><i class="bi bi-list-check"></i><span>Rescue Tasks</span></div><div class="feature-item reveal"><i class="bi bi-patch-check"></i><span>Safety Verification</span></div>
+            <div class="feature-item reveal"><i class="bi bi-box-arrow-in-down"></i><span>Pickup Confirmation</span></div><div class="feature-item reveal"><i class="bi bi-house-check"></i><span>Delivery Confirmation</span></div><div class="feature-item reveal"><i class="bi bi-envelope"></i><span>Email Notifications</span></div>
+            <div class="feature-item reveal"><i class="bi bi-speedometer2"></i><span>Impact Dashboard</span></div><div class="feature-item reveal"><i class="bi bi-clipboard-data"></i><span>Kilograms Tracking</span></div><div class="feature-item reveal"><i class="bi bi-calculator"></i><span>Meals Calculation</span></div>
+            <div class="feature-item reveal"><i class="bi bi-file-earmark-arrow-down"></i><span>CSV/PDF Reports</span></div><div class="feature-item reveal"><i class="bi bi-sliders"></i><span>Admin Dashboard</span></div><div class="feature-item reveal"><i class="bi bi-phone"></i><span>Mobile Interface</span></div>
+          </div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="technology" class="section-pad technology-section">
+      <div class="container">
+        <div class="section-heading text-center reveal"><div class="section-label justify-content-center">Technology stack</div><h2>Open-source at the <span>core.</span></h2><p>A pragmatic stack selected for reliability, maintainability and a $0 software licensing target.</p></div>
+        <div class="tech-layout reveal">
+          <article class="tech-group"><div class="tech-heading"><i class="bi bi-window"></i><div><small>Interface</small><h3>Frontend</h3></div></div><div class="tech-tags"><span>HTML5</span><span>CSS3</span><span>Bootstrap 5</span><span>HTMX</span></div></article>
+          <article class="tech-group"><div class="tech-heading"><i class="bi bi-braces"></i><div><small>Application</small><h3>Backend</h3></div></div><div class="tech-tags"><span>Python</span><span>Django</span></div></article>
+          <article class="tech-group"><div class="tech-heading"><i class="bi bi-database"></i><div><small>Data</small><h3>Database</h3></div></div><div class="tech-tags"><span>MySQL</span><span>Django ORM</span></div></article>
+          <article class="tech-group"><div class="tech-heading"><i class="bi bi-envelope-at"></i><div><small>Communication</small><h3>Notifications</h3></div></div><div class="tech-tags"><span>SMTP Email</span><span>Background Jobs</span></div></article>
+          <article class="tech-group tech-wide"><div class="tech-heading"><i class="bi bi-server"></i><div><small>Hosting</small><h3>Infrastructure</h3></div></div><div class="tech-tags"><span>Linux Hosting</span><span>Gunicorn</span><span>Python Virtual Environment</span></div></article>
+        </div>
+        <div class="open-source-banner reveal"><span class="license-value">$0</span><div><strong>Target software licensing cost</strong><p>FoodBridge intentionally prioritises proven open-source technologies.</p></div><i class="bi bi-unlock" aria-hidden="true"></i></div>
+      </div>
+    </section>
+
+    <section id="objectives" class="section-pad objectives-section">
+      <div class="container">
+        <div class="row align-items-center g-5">
+          <div class="col-lg-4 reveal"><div class="section-label light-label">Project objectives</div><h2>Clear goals for a focused <span>MVP.</span></h2><p>Our goal is to deliver a functional and tested FoodBridge MVP within an eight-week Agile development cycle.</p></div>
+          <div class="col-lg-8"><div class="row g-3">
+            <div class="col-sm-6 reveal"><div class="goal-card"><strong>&lt; 5 <small>min</small></strong><span>Target food matching latency</span></div></div>
+            <div class="col-sm-6 reveal"><div class="goal-card"><strong>90%<small>+</small></strong><span>Target collection efficiency</span></div></div>
+            <div class="col-sm-6 reveal"><div class="goal-card"><strong>8 <small>Weeks</small></strong><span>Agile MVP development cycle</span></div></div>
+            <div class="col-sm-6 reveal"><div class="goal-card"><strong>$0</strong><span>Software licensing target</span></div></div>
+          </div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="sdgs" class="section-pad sdg-section">
+      <div class="container">
+        <div class="section-heading text-center reveal"><div class="section-label justify-content-center">Sustainable impact</div><h2>Supporting the UN Sustainable <span>Development Goals.</span></h2><p>The proposed platform aligns practical community coordination with broader goals for hunger, waste reduction and partnership.</p></div>
+        <div class="row g-4">
+          <div class="col-md-4 reveal"><article class="sdg-card sdg-17"><span class="sdg-number">17</span><div><small>Partnerships for the Goals</small><h3>A shared coordination platform</h3><p>Connecting businesses, community volunteers, charities and other community stakeholders through one digital system.</p></div></article></div>
+          <div class="col-md-4 reveal"><article class="sdg-card sdg-2"><span class="sdg-number">2</span><div><small>Zero Hunger</small><h3>Redirecting food toward need</h3><p>Helping surplus edible food reach community organisations and people experiencing food insecurity.</p></div></article></div>
+          <div class="col-md-4 reveal"><article class="sdg-card sdg-12"><span class="sdg-number">12</span><div><small>Responsible Consumption</small><h3>Reducing edible food waste</h3><p>Improving how surplus food collection and redistribution are coordinated across the community.</p></div></article></div>
+        </div>
+        <p class="sdg-note text-center">SDG references are used for educational alignment. Cards are original and do not reproduce official UN graphics.</p>
+      </div>
+    </section>
+
+    <section id="roadmap" class="section-pad roadmap-section">
+      <div class="container">
+        <div class="row align-items-end mb-5 g-3"><div class="col-lg-7 reveal"><div class="section-label">Development roadmap</div><h2>Eight weeks from concept to <span>tested MVP.</span></h2></div><div class="col-lg-5 reveal"><p>An Agile delivery plan organised around core dependencies, continuous validation and a practical handover.</p></div></div>
+        <div class="roadmap-grid">
+          <article class="roadmap-item reveal"><span>01</span><small>Week 1</small><h3>Requirements &amp; ERD</h3><i class="bi bi-diagram-2"></i></article>
+          <article class="roadmap-item reveal"><span>02</span><small>Week 2</small><h3>Authentication &amp; User Roles</h3><i class="bi bi-person-lock"></i></article>
+          <article class="roadmap-item reveal"><span>03</span><small>Week 3</small><h3>Food Listing Engine</h3><i class="bi bi-card-checklist"></i></article>
+          <article class="roadmap-item reveal"><span>04</span><small>Week 4</small><h3>Proximity Matching</h3><i class="bi bi-geo"></i></article>
+          <article class="roadmap-item reveal"><span>05</span><small>Week 5</small><h3>Logistics &amp; Verification</h3><i class="bi bi-truck"></i></article>
+          <article class="roadmap-item reveal"><span>06</span><small>Week 6</small><h3>Notifications &amp; Alerts</h3><i class="bi bi-bell"></i></article>
+          <article class="roadmap-item reveal"><span>07</span><small>Week 7</small><h3>Impact Analytics</h3><i class="bi bi-graph-up"></i></article>
+          <article class="roadmap-item reveal"><span>08</span><small>Week 8</small><h3>UAT &amp; Client Handover</h3><i class="bi bi-flag"></i></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="team" class="section-pad team-section">
+      <div class="container">
+        <div class="section-heading text-center reveal"><div class="section-label justify-content-center">Danfe Solution</div><h2>Meet the team behind <span>FoodBridge.</span></h2><p>Three collaborators working across the project’s design, engineering, logistics and evaluation needs.</p></div>
+        <div class="row g-4 justify-content-center team-row">
+          <div class="col-md-4 reveal"><article class="team-card"><div class="avatar"><img src="{% static 'assets/images/team/sahamat.jpg' %}" alt="Sahamat, Project Team Member at Danfe Solution" width="82" height="82" onerror="this.onerror=null;this.src='assets/images/team/sahamat.svg';"></div><h3>Sahamat</h3><p>Project Team Member</p><span>Danfe Solution</span></article></div>
+          <div class="col-md-4 reveal"><article class="team-card featured"><div class="avatar"><img src="{% static 'assets/images/team/manoj.jpg' %}" alt="Manoj, Project Team Member at Danfe Solution" width="82" height="82" onerror="this.onerror=null;this.src='assets/images/team/manoj.svg';"></div><h3>Manoj</h3><p>Project Team Member</p><span>Danfe Solution</span></article></div>
+          <div class="col-md-4 reveal"><article class="team-card"><div class="avatar"><img src="{% static 'assets/images/team/nischal.jpg' %}" alt="Nischal, Project Team Member at Danfe Solution" width="82" height="82" onerror="this.onerror=null;this.src='assets/images/team/nischal.svg';"></div><h3>Nischal</h3><p>Project Team Member</p><span>Danfe Solution</span></article></div>
+        </div>
+        <div class="work-areas reveal">
+          <div class="work-area"><div class="work-title"><i class="bi bi-database-gear"></i><h3>Backend &amp; Data</h3></div><p>Database schema • Django ORM models • Authentication • Proximity matching • Security</p></div>
+          <div class="work-area"><div class="work-title"><i class="bi bi-boxes"></i><h3>Logistics &amp; Infrastructure</h3></div><p>Notification engine • Background jobs • Distance calculations • Deployment • Infrastructure</p></div>
+          <div class="work-area"><div class="work-title"><i class="bi bi-layout-text-window"></i><h3>Frontend &amp; Impact</h3></div><p>Bootstrap/HTMX interfaces • Donor and driver screens • Impact reporting • UAT</p></div>
+        </div>
+        <p class="work-note reveal"><i class="bi bi-info-circle"></i> Work areas represent the project scope and are not assigned to individual team members.</p>
+      </div>
+    </section>
+
+    <section class="closing-section">
+      <div class="container text-center reveal"><span class="closing-icon"><i class="bi bi-heart-fill"></i></span><h2>Technology connecting <span>surplus with need.</span></h2><p>A practical platform proposal for faster food rescue, clearer coordination and measurable community impact.</p><a class="btn btn-light-custom" href="#home">Back to the top <i class="bi bi-arrow-up"></i></a></div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container"><div class="footer-top"><div><a class="footer-brand" href="#home"><span class="brand-mark"><img src="{% static 'assets/images/foodbridge-mark.svg' %}" alt="" width="46" height="38"></span> Food<span>Bridge</span></a><p>Surplus Food Rescue &amp; Redistribution Management System</p></div><div class="footer-meta"><strong>Developed by Danfe Solution</strong><span>Sahamat • Manoj • Nischal</span></div></div><div class="footer-bottom"><span>FoodBridge — 2026</span><span>Proposed open-source community platform</span></div></div>
+  </footer>
+
+  <script src="{% static 'assets/vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+  <script src="{% static 'assets/js/main.js' %}"></script>
+</body>
+</html>

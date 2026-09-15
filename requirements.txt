@@ -1,2 +1,5 @@
+Django>=5.0,<6.0
 pymysql
 python-dotenv
+faker
+pillow

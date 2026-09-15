@@ -1,0 +1,68 @@
+{% extends "base_app.html" %}
+{% load donation_extras %}
+{% block title %}Driver dashboard · FoodBridge{% endblock %}
+{% block content %}
+<h2 class="mb-4">Driver dashboard</h2>
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="app-card">
+      <h5 class="mb-3">Needs a driver</h5>
+      <table class="table align-middle">
+        <thead><tr><th>Food</th><th>Pickup</th><th></th></tr></thead>
+        <tbody>
+        {% for d in needs_driver %}
+          <tr>
+            <td>{{ d.food_item }} ({{ d.quantity_kg }} kg)</td>
+            <td>{{ d.pickup_address|default:"—" }}</td>
+            <td>
+              <form method="post" class="mb-0">{% csrf_token %}
+                <input type="hidden" name="donation_id" value="{{ d.id }}">
+                <input type="hidden" name="action" value="accept">
+                <button class="btn btn-sm btn-forest" type="submit">Accept</button>
+              </form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="3" class="text-muted">Nothing waiting on a driver.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="app-card mb-4">
+      <h5 class="mb-3">Your active deliveries</h5>
+      <table class="table align-middle">
+        <thead><tr><th>Food</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        {% for d in my_deliveries %}
+          <tr>
+            <td>{{ d.food_item }}</td>
+            <td><span class="badge-status {{ d.status|status_class }}">{{ d.status }}</span></td>
+            <td>
+              <form method="post" class="mb-0">{% csrf_token %}
+                <input type="hidden" name="donation_id" value="{{ d.id }}">
+                <input type="hidden" name="action" value="delivered">
+                <button class="btn btn-sm btn-forest" type="submit">Mark delivered</button>
+              </form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="3" class="text-muted">Nothing in progress.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="app-card">
+      <h5 class="mb-3">Recently completed</h5>
+      <ul class="list-unstyled mb-0 small">
+        {% for d in completed %}
+          <li>{{ d.food_item }} — delivered {{ d.delivered_at|date:"d M" }}</li>
+        {% empty %}
+          <li class="text-muted">No completed deliveries yet.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

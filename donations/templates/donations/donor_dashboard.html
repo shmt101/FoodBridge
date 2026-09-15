@@ -1,0 +1,41 @@
+{% extends "base_app.html" %}
+{% load donation_extras %}
+{% block title %}Donor dashboard · FoodBridge{% endblock %}
+{% block content %}
+<h2 class="mb-4">Donor dashboard</h2>
+<div class="row g-4">
+  <div class="col-lg-5">
+    <div class="app-card">
+      <h5 class="mb-3">List new surplus food</h5>
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-3"><label class="form-label">Food item</label>{{ form.food_item }}</div>
+        <div class="mb-3"><label class="form-label">Quantity (kg)</label>{{ form.quantity_kg }}</div>
+        <div class="mb-3"><label class="form-label">Pickup address</label>{{ form.pickup_address }}</div>
+        <div class="mb-3"><label class="form-label">Notes</label>{{ form.notes }}</div>
+        <button class="btn btn-forest" type="submit">List donation</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="app-card">
+      <h5 class="mb-3">Your donations ({{ donations|length }})</h5>
+      <table class="table align-middle">
+        <thead><tr><th>Food</th><th>Qty</th><th>Status</th><th>Listed</th></tr></thead>
+        <tbody>
+        {% for d in donations %}
+          <tr>
+            <td>{{ d.food_item }}</td>
+            <td>{{ d.quantity_kg }} kg</td>
+            <td><span class="badge-status {{ d.status|status_class }}">{{ d.status }}</span></td>
+            <td>{{ d.date_listed|date:"d M, H:i" }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="text-muted">No donations listed yet.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

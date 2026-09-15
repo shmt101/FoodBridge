@@ -1,0 +1,52 @@
+{% extends "base_app.html" %}
+{% load donation_extras %}
+{% block title %}Recipient dashboard · FoodBridge{% endblock %}
+{% block content %}
+<h2 class="mb-4">Recipient dashboard</h2>
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="app-card">
+      <h5 class="mb-3">Available donations</h5>
+      <table class="table align-middle">
+        <thead><tr><th>Food</th><th>Qty</th><th>Donor</th><th></th></tr></thead>
+        <tbody>
+        {% for d in available %}
+          <tr>
+            <td>{{ d.food_item }}</td>
+            <td>{{ d.quantity_kg }} kg</td>
+            <td>{{ d.donor_name }}</td>
+            <td>
+              <form method="post" class="mb-0">{% csrf_token %}
+                <input type="hidden" name="donation_id" value="{{ d.id }}">
+                <button class="btn btn-sm btn-forest" type="submit">Claim</button>
+              </form>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="4" class="text-muted">Nothing available right now.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="app-card">
+      <h5 class="mb-3">Your claims</h5>
+      <table class="table align-middle">
+        <thead><tr><th>Food</th><th>Qty</th><th>Status</th></tr></thead>
+        <tbody>
+        {% for d in my_claims %}
+          <tr>
+            <td>{{ d.food_item }}</td>
+            <td>{{ d.quantity_kg }} kg</td>
+            <td><span class="badge-status {{ d.status|status_class }}">{{ d.status }}</span></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="3" class="text-muted">No claims yet.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
