@@ -1,11 +1,12 @@
 [Unit]
-Description=FoodBridge static project website
+Description=FoodBridge Django application
 After=network.target
 
 [Service]
 Type=simple
 WorkingDirectory=/home/winproject-2026s2e/htdocs/2026s2e.winproject.com.au
-ExecStart=/usr/bin/python3 -m http.server 8096 --bind 0.0.0.0 --directory /home/winproject-2026s2e/htdocs/2026s2e.winproject.com.au
+EnvironmentFile=/home/winproject-2026s2e/htdocs/2026s2e.winproject.com.au/.env
+ExecStart=/home/winproject-2026s2e/htdocs/2026s2e.winproject.com.au/venv/bin/gunicorn foodbridge.wsgi:application --bind 0.0.0.0:8096 --workers 3
 Restart=always
 RestartSec=3
 NoNewPrivileges=true

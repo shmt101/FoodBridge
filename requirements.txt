@@ -3,3 +3,5 @@ pymysql
 python-dotenv
 faker
 pillow
+whitenoise
+gunicorn
