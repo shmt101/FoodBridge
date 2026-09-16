@@ -37,7 +37,7 @@ def signup(request):
 def dashboard(request):
     """Single entry point that routes each role to its own dashboard (RBAC)."""
     if request.user.is_staff or request.user.is_superuser:
-    return redirect("donations:admin_dashboard")
+    	return redirect("donations:admin_dashboard")
     role = request.user.role
     if role == User.Role.DONOR:
         return redirect("donations:donor_dashboard")
