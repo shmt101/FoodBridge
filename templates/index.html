@@ -17,60 +17,29 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet">
   <link href="{% static 'assets/vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="{% static 'assets/css/style.css' %}?v=20260820-2" rel="stylesheet">
+  <link href="{% static 'assets/css/style.css' %}?v=20260920-3" rel="stylesheet">
 </head>
-<body data-bs-spy="scroll" data-bs-target="#mainNav" data-bs-root-margin="-20% 0px -70%">
+<body>
   <a class="skip-link" href="#main-content">Skip to main content</a>
+  {% include "partials/public_nav.html" with active="home" %}
 
-  <nav id="mainNav" class="navbar navbar-expand-lg fixed-top" aria-label="Primary navigation">
-    <div class="container">
-      <a class="navbar-brand" href="#home" aria-label="FoodBridge home">
-        <span class="brand-mark"><img src="{% static 'assets/images/foodbridge-mark.svg' %}" alt="" width="46" height="38"></span>
-        <span>Food<span>Bridge</span></span>
-      </a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu" aria-controls="navbarMenu" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarMenu">
-        <ul class="navbar-nav ms-auto align-items-lg-center">
-          <li class="nav-item ms-lg-2"><a class="btn btn-nav" href="#home">Home</a></li>
-          <li class="nav-item ms-lg-2"><a class="btn btn-nav" href="#about">About</a></li>
-        <li class="nav-item ms-lg-2"><a class="btn btn-nav" href="#team">Meet the Team</a></li>
-        </ul>
-        <form class="d-flex nav-search ms-lg-3" role="search" action="{% url 'donations:live' %}" method="get">
-          <input class="form-control form-control-sm" type="search" name="q" placeholder="Search donations…" aria-label="Search donations">
-          <button class="btn btn-sm btn-nav" type="submit"><i class="bi bi-search"></i></button>
-        </form>
-        <ul class="navbar-nav align-items-lg-center ms-lg-3">
-          <li class="nav-item ms-lg-2"><a class="btn btn-nav" href="{% url 'donations:live' %}">Live Donations</a></li>
-          {% if user.is_authenticated %}
-            <li class="nav-item ms-lg-2"><a class="btn btn-nav" href="{% url 'accounts:dashboard' %}">Dashboard</a></li>
-            <li class="nav-item ms-lg-2"><a class="btn btn-nav" href="{% url 'accounts:profile' %}">Profile</a></li>
-            <li class="nav-item ms-lg-2">
-              <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">{% csrf_token %}
-                <button type="submit" class="btn btn-nav">Log out</button>
-              </form>
-            </li>
-          {% else %}
-            <li class="nav-item ms-lg-2"><a class="btn btn-nav" href="{% url 'accounts:login' %}">Log in</a></li>
-            <li class="nav-item ms-lg-2"><a class="btn btn-primary-custom" href="{% url 'accounts:signup' %}">Sign up</a></li>
-          {% endif %}
-        </ul>
-      </div>
-    </div>
-  </nav>
-
-  <header id="home" class="hero-section">
+  <!-- Home: one screen only. Search Donations + About are the two ways onward. -->
+  <main id="main-content">
+  <section id="home" class="hero-section home-hero">
     <div class="hero-orb orb-one" aria-hidden="true"></div>
     <div class="hero-orb orb-two" aria-hidden="true"></div>
     <div class="container position-relative">
       <div class="row align-items-center g-5 min-vh-100 py-5">
         <div class="col-lg-6 hero-copy reveal">
+          <div class="landing-brand">
+            <span class="brand-mark"><img src="{% static 'assets/images/foodbridge-mark.svg' %}" alt="" width="46" height="38"></span>
+            <span>Food<span>Bridge</span></span>
+          </div>
           <h1>Rescuing surplus food.<br><em>Connecting communities.</em></h1>
           <p class="hero-lead">FoodBridge is a proposed digital food rescue and redistribution platform connecting local food donors, volunteer drivers and community food relief organisations.</p>
           <div class="d-flex flex-wrap gap-3 hero-actions">
-            <a class="btn btn-primary-custom" href="#about">Explore FoodBridge <i class="bi bi-arrow-down" aria-hidden="true"></i></a>
-            <a class="btn btn-secondary-custom" href="#team">Meet the Team</a>
+            <a class="btn btn-primary-custom" href="{% url 'donations:live' %}">Search Donations <i class="bi bi-search" aria-hidden="true"></i></a>
+            <a class="btn btn-secondary-custom" href="{% url 'about' %}">About</a>
           </div>
           <div class="hero-trust">
             <div class="trust-icons" aria-hidden="true"><span><i class="bi bi-shop"></i></span><span><i class="bi bi-truck"></i></span><span><i class="bi bi-house-heart"></i></span></div>
@@ -86,53 +55,8 @@
         </div>
       </div>
     </div>
-  </header>
-
-  <main id="main-content">
-    <section id="about" class="section-pad intro-section">
-      <div class="container">
-        <div class="row align-items-center g-5">
-          <div class="col-lg-5 reveal">
-            <div class="section-label">About the project</div>
-            <h2>Turning surplus into <span>shared value.</span></h2>
-          </div>
-          <div class="col-lg-7 reveal">
-            <p class="lead-copy">FoodBridge is an open-source platform connecting food donors, volunteer drivers and community pantries in one transparent workflow — from listing surplus food to confirming delivery.</p>
-          </div>
-        </div>
-        <div class="connection-strip reveal" aria-label="FoodBridge participant network">
-          <div><span class="mini-icon"><i class="bi bi-building"></i></span><strong>Food donors</strong><small>List available surplus</small></div><i class="bi bi-arrow-right connector" aria-hidden="true"></i>
-          <div><span class="mini-icon"><i class="bi bi-person-raised-hand"></i></span><strong>Volunteer drivers</strong><small>Collect and transport</small></div><i class="bi bi-arrow-right connector" aria-hidden="true"></i>
-          <div><span class="mini-icon"><i class="bi bi-house-heart"></i></span><strong>Community pantries</strong><small>Receive food safely</small></div><i class="bi bi-arrow-right connector" aria-hidden="true"></i>
-          <div><span class="mini-icon"><i class="bi bi-grid"></i></span><strong>Coordinators</strong><small>Oversee the network</small></div>
-        </div>
-      </div>
-    </section>
-    <section id="team" class="section-pad team-section">
-      <div class="container">
-        <div class="section-heading text-center reveal"><div class="section-label justify-content-center">Danfe Solution</div><h2>Meet the team behind <span>FoodBridge.</span></h2><p>Three collaborators working across the project’s design, engineering, logistics and evaluation needs.</p></div>
-        <div class="row g-4 justify-content-center team-row">
-          <div class="col-md-4 reveal"><article class="team-card"><div class="avatar"><img src="{% static 'assets/images/team/sahamat.jpg' %}" alt="Sahamat, Project Team Member at Danfe Solution" width="82" height="82" onerror="this.onerror=null;this.src='assets/images/team/sahamat.svg';"></div><h3>Sahamat</h3><p>Project Team Member</p><span>Danfe Solution</span></article></div>
-          <div class="col-md-4 reveal"><article class="team-card featured"><div class="avatar"><img src="{% static 'assets/images/team/manoj.jpg' %}" alt="Manoj, Project Team Member at Danfe Solution" width="82" height="82" onerror="this.onerror=null;this.src='assets/images/team/manoj.svg';"></div><h3>Manoj</h3><p>Project Team Member</p><span>Danfe Solution</span></article></div>
-          <div class="col-md-4 reveal"><article class="team-card"><div class="avatar"><img src="{% static 'assets/images/team/nischal.jpg' %}" alt="Nischal, Project Team Member at Danfe Solution" width="82" height="82" onerror="this.onerror=null;this.src='assets/images/team/nischal.svg';"></div><h3>Nischal</h3><p>Project Team Member</p><span>Danfe Solution</span></article></div>
-        </div>
-        <div class="work-areas reveal">
-          <div class="work-area"><div class="work-title"><i class="bi bi-database-gear"></i><h3>Backend &amp; Data</h3></div><p>Database schema • Django ORM models • Authentication • Proximity matching • Security</p></div>
-          <div class="work-area"><div class="work-title"><i class="bi bi-boxes"></i><h3>Logistics &amp; Infrastructure</h3></div><p>Notification engine • Background jobs • Distance calculations • Deployment • Infrastructure</p></div>
-          <div class="work-area"><div class="work-title"><i class="bi bi-layout-text-window"></i><h3>Frontend &amp; Impact</h3></div><p>Bootstrap/HTMX interfaces • Donor and driver screens • Impact reporting • UAT</p></div>
-        </div>
-        <p class="work-note reveal"><i class="bi bi-info-circle"></i> Work areas represent the project scope and are not assigned to individual team members.</p>
-      </div>
-    </section>
-
-    <section class="closing-section">
-      <div class="container text-center reveal"><span class="closing-icon"><i class="bi bi-heart-fill"></i></span><h2>Technology connecting <span>surplus with need.</span></h2><p>A practical platform proposal for faster food rescue, clearer coordination and measurable community impact.</p><a class="btn btn-light-custom" href="#home">Back to the top <i class="bi bi-arrow-up"></i></a></div>
-    </section>
+  </section>
   </main>
-
-  <footer>
-    <div class="container"><div class="footer-top"><div><a class="footer-brand" href="#home"><span class="brand-mark"><img src="{% static 'assets/images/foodbridge-mark.svg' %}" alt="" width="46" height="38"></span> Food<span>Bridge</span></a><p>Surplus Food Rescue &amp; Redistribution Management System</p></div><div class="footer-meta"><strong>Developed by Danfe Solution</strong><span>Sahamat • Manoj • Nischal</span></div></div><div class="footer-bottom"><span>FoodBridge — 2026</span><span>Proposed open-source community platform</span></div></div>
-  </footer>
 
   <script src="{% static 'assets/vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'assets/js/main.js' %}"></script>

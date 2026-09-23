@@ -1,0 +1,33 @@
+{% comment %}
+Top bar for the public pages (Home, About). Search box sits top-left;
+Home and Login / Sign up are plain text links. Pass `active` to highlight a link.
+{% endcomment %}
+<nav id="mainNav" class="navbar navbar-expand-lg fixed-top public-nav" aria-label="Primary navigation">
+  <div class="container">
+    <form class="nav-search-box" role="search" action="{% url 'donations:live' %}" method="get">
+      <i class="bi bi-search" aria-hidden="true"></i>
+      <input type="search" name="q" placeholder="Search donations…" aria-label="Search donations" autocomplete="off">
+    </form>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu" aria-controls="navbarMenu" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarMenu">
+      <ul class="navbar-nav ms-auto align-items-lg-center">
+        <li class="nav-item"><a class="nav-link{% if active == 'home' %} active{% endif %}" href="{% url 'home' %}"{% if active == 'home' %} aria-current="page"{% endif %}>Home</a></li>
+        {% if user.is_authenticated %}
+          <li class="nav-item"><a class="nav-link" href="{% url 'accounts:dashboard' %}">Dashboard</a></li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'inbox:home' %}">Inbox{% if unread_total %} <span class="nav-badge">{{ unread_total }}</span>{% endif %}</a></li>
+          <li class="nav-item">
+            <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">{% csrf_token %}
+              <button type="submit" class="nav-link nav-link-button">Log out</button>
+            </form>
+          </li>
+        {% else %}
+          <li class="nav-item nav-auth">
+            <a class="nav-link" href="{% url 'accounts:login' %}">Login</a><span class="nav-slash" aria-hidden="true">/</span><a class="nav-link" href="{% url 'accounts:signup' %}">Sign up</a>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>

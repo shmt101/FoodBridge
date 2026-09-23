@@ -1,0 +1,7 @@
+<div class="dash-hello mb-4">
+  <h2 class="mb-1">Hello, <span>{{ user.first_name|default:user.username }}</span>!</h2>
+  <p class="hello-sub">
+    {{ title }}{% if user.organisation_name %} · {{ user.organisation_name }}{% endif %}
+    {% if unread_total %}· <a href="{% url 'inbox:home' %}">You have {{ unread_total }} unread in your inbox</a>{% endif %}
+  </p>
+</div>
