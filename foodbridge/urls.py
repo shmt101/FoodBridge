@@ -8,7 +8,10 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/", include("accounts.urls")),
     path("donations/", include("donations.urls")),
-    path("", TemplateView.as_view(template_name="index.html"), name="home"),
+    path("inbox/", include("inbox.urls")),
+    path("", TemplateView.as_view(template_name="landing.html"), name="landing"),
+    path("home/", TemplateView.as_view(template_name="index.html"), name="home"),
+    path("about/", TemplateView.as_view(template_name="about.html"), name="about"),
 ]
 
 if settings.DEBUG:

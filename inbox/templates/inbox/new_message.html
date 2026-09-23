@@ -1,0 +1,26 @@
+{% extends "base_app.html" %}
+{% block title %}New message · FoodBridge{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <a class="back-link small text-decoration-none" href="{% url 'inbox:home' %}"><i class="bi bi-arrow-left"></i> Back to inbox</a>
+    <div class="app-card mt-2">
+      <h2 class="mb-3">New message</h2>
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label" for="{{ form.recipient.id_for_label }}">To</label>
+          {{ form.recipient }}
+          {% for e in form.recipient.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="{{ form.body.id_for_label }}">Message</label>
+          {{ form.body }}
+          {% for e in form.body.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
+        </div>
+        <button class="btn btn-forest" type="submit"><i class="bi bi-send"></i> Send message</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

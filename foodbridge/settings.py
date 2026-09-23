@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'accounts',
     'donations',
+    'inbox',
 ]
 
 MIDDLEWARE = [
@@ -44,7 +45,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-]]
+]
 
 ROOT_URLCONF = 'foodbridge.urls'
 
@@ -58,6 +59,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'inbox.context_processors.unread_counts',
             ],
         },
     },

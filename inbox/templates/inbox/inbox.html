@@ -1,0 +1,59 @@
+{% extends "base_app.html" %}
+{% block title %}Inbox · FoodBridge{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h2 class="mb-1">Inbox</h2>
+    <p class="text-muted mb-0">Updates about your donations, and messages from other FoodBridge members.</p>
+  </div>
+  <a class="btn btn-forest" href="{% url 'inbox:new' %}"><i class="bi bi-pencil-square"></i> New message</a>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="app-card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0">Notifications{% if unread_notifications %} <span class="nav-badge">{{ unread_notifications }}</span>{% endif %}</h5>
+        {% if unread_notifications %}
+        <form method="post" action="{% url 'inbox:mark_all_read' %}" class="mb-0">{% csrf_token %}
+          <button class="btn btn-sm btn-outline-secondary" type="submit">Mark all as read</button>
+        </form>
+        {% endif %}
+      </div>
+      {% for n in notifications %}
+        <a class="notif-item{% if n.is_unread %} unread{% endif %}" href="{% url 'inbox:notification_open' n.pk %}">
+          <span class="notif-icon"><i class="bi {{ n.icon }}"></i></span>
+          <span class="flex-grow-1">
+            <span class="notif-text d-block">{{ n.text }}</span>
+            <span class="notif-time">{{ n.created_at|timesince }} ago</span>
+          </span>
+          {% if n.is_unread %}<span class="unread-dot" title="Unread"></span>{% endif %}
+        </a>
+      {% empty %}
+        <p class="text-muted mb-0 py-3">No notifications yet. You'll be told here when something happens to one of your donations{% if user.role == 'DRIVER' %}, or when new food needs a driver{% endif %}.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="app-card h-100">
+      <h5 class="mb-2">Messages{% if unread_messages %} <span class="nav-badge">{{ unread_messages }}</span>{% endif %}</h5>
+      {% for c in conversations %}
+        <a class="convo-item" href="{% url 'inbox:conversation' c.other.pk %}">
+          <span class="convo-avatar">{{ c.other.display_name|slice:":1"|upper }}</span>
+          <span class="flex-grow-1" style="min-width:0">
+            <span class="d-flex justify-content-between gap-2">
+              <strong>{{ c.other.display_name }}</strong>
+              <span class="notif-time">{{ c.last.created_at|timesince }} ago</span>
+            </span>
+            <span class="convo-snippet d-block">{% if c.last.sender_id == user.pk %}You: {% endif %}{{ c.last.body }}</span>
+          </span>
+          {% if c.unread %}<span class="nav-badge">{{ c.unread }}</span>{% endif %}
+        </a>
+      {% empty %}
+        <p class="text-muted mb-0 py-3">No conversations yet. Start one with <a class="back-link" href="{% url 'inbox:new' %}">a new message</a>.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

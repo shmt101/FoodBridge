@@ -35,5 +35,10 @@ class User(AbstractUser):
     def is_admin_role(self):
         return self.role == self.Role.ADMIN or self.is_staff
 
+    @property
+    def display_name(self):
+        """Friendly name used in notifications and messages."""
+        return self.organisation_name or self.get_full_name() or self.username
+
     def __str__(self):
         return f"{self.get_full_name() or self.username} ({self.get_role_display()})"
