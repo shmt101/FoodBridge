@@ -54,3 +54,36 @@ html.landing-page{scroll-padding-top:0}
 .home-hero .min-vh-100{padding-top:5.5rem!important}
 .about-page{padding-top:70px}
 @media(max-width:991.98px){.public-nav .navbar-collapse{margin-top:.5rem}.nav-auth{padding:.2rem 0}.public-nav .nav-link.active:after{left:.6rem;right:auto;width:1.5rem}}
+
+/* Institutional credit (WIN Education) */
+.edu-badge{display:inline-flex;align-items:center;line-height:0}
+.edu-badge img{height:30px;width:auto;display:block}
+
+/* On the landing page: pinned to the top-right corner of the hero, mirroring the FoodBridge mark at top-left */
+.landing-hero .edu-badge{position:absolute;top:1.75rem;right:1.5rem;z-index:5}
+
+/* On the fixed public nav (Home/About): vertically centred at the right edge */
+.public-nav .container{position:relative}
+.public-nav .edu-badge{position:absolute;right:1rem;top:50%;transform:translateY(-50%)}
+.public-nav .navbar-collapse{margin-right:9.5rem}
+.public-nav .navbar-nav .nav-item,.public-nav .nav-auth{white-space:nowrap}
+
+@media(max-width:991.98px){
+  /* Collapsed (hamburger) nav: give the toggler room so it doesn't sit under the logo */
+  .public-nav .navbar-collapse{margin-right:0}
+  .public-nav .navbar-toggler{margin-right:9.5rem}
+  /* Overlay the dropdown instead of pushing the bar taller, so the logo (centred on the
+     collapsed bar) doesn't drift down into it when the menu opens. */
+  .public-nav .navbar-collapse{position:absolute;top:100%;left:0;right:0;margin-top:.5rem;z-index:1050}
+}
+@media(max-width:767.98px){
+  .landing-hero .edu-badge{top:1.1rem;right:1rem}
+  .landing-hero .edu-badge img{height:22px}
+  .public-nav .edu-badge img{height:20px}
+  .public-nav .edu-badge{right:.6rem}
+  .public-nav .navbar-toggler{margin-right:6.25rem}
+}
+@media(max-width:420px){
+  .public-nav .edu-badge img{height:17px}
+  .public-nav .navbar-toggler{margin-right:5rem}
+}

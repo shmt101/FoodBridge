@@ -1,3 +1,4 @@
+{% load static %}
 {% comment %}
 Top bar for the public pages (Home, About). Search box sits top-left;
 Home and Login / Sign up are plain text links. Pass `active` to highlight a link.
@@ -29,5 +30,8 @@ Home and Login / Sign up are plain text links. Pass `active` to highlight a link
         {% endif %}
       </ul>
     </div>
+    <a class="edu-badge" href="https://www.win.edu.au" target="_blank" rel="noopener">
+      <img src="{% static 'assets/images/win-education-logo.png' %}" alt="Wentworth Institute of Higher Education (WIN Education), CRICOS Code 03279M, PRV12063">
+    </a>
   </div>
 </nav>
