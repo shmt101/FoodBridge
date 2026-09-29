@@ -24,9 +24,9 @@
 </form>
 
 <div class="row g-3 mb-4">
-  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ total_kg|floatformat:0 }} kg</div><div class="stat-label">{% if chosen_area %}Listed near {{ chosen_area_label }}{% else %}Listed{% endif %}</div></div></div>
-  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">≈ {{ meals }}</div><div class="stat-label">Meals' worth</div></div></div>
-  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ delivered_count }}</div><div class="stat-label">Completed deliveries</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card stat-good"><div class="stat-value">{{ total_kg|floatformat:0 }} kg</div><div class="stat-label">{% if chosen_area %}Listed near {{ chosen_area_label }}{% else %}Listed{% endif %}</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card stat-good"><div class="stat-value">≈ {{ meals }}</div><div class="stat-label">Meals' worth</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card stat-info"><div class="stat-value">{{ delivered_count }}</div><div class="stat-label">Completed deliveries</div></div></div>
   <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ donations|length }}</div><div class="stat-label">Matching listings</div></div></div>
 </div>
 

@@ -33,14 +33,28 @@
 
 {% if summary %}
 <div class="row g-3 mb-4">
-  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ summary.kg_delivered }} kg</div><div class="stat-label">Food delivered</div></div></div>
-  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">≈ {{ summary.meals }}</div><div class="stat-label">Meals (est. 2 per kg)</div></div></div>
-  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ summary.co2e }} kg</div><div class="stat-label">CO₂-e avoided (est.)</div></div></div>
-  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{% if summary.fulfilment_rate is not None %}{{ summary.fulfilment_rate }}%{% else %}—{% endif %}</div><div class="stat-label">Fulfilment rate</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card stat-good"><div class="stat-value">{{ summary.kg_delivered }} kg</div><div class="stat-label">Food delivered</div></div></div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-combo stat-good">
+      <div class="stat-sub"><div class="stat-value">≈{{ summary.meals }}</div><div class="stat-label">Meals</div></div>
+      <div class="stat-sub"><div class="stat-value">{{ summary.co2e }} kg</div><div class="stat-label">CO₂-e avoided</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3"><div class="stat-card stat-info"><div class="stat-value">{% if summary.fulfilment_rate is not None %}{{ summary.fulfilment_rate }}%{% else %}—{% endif %}</div><div class="stat-label">Fulfilment rate</div></div></div>
   <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ summary.listings }}</div><div class="stat-label">Listings ({{ summary.kg_listed }} kg)</div></div></div>
-  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ summary.delivered }} / {{ summary.cancelled }} / {{ summary.expired }}</div><div class="stat-label">Delivered / cancelled / expired</div></div></div>
-  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{% if summary.avg_hours_to_claim is not None %}{{ summary.avg_hours_to_claim }} h{% else %}—{% endif %}</div><div class="stat-label">Avg time to be claimed</div></div></div>
-  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{% if summary.offer_accept_rate is not None %}{{ summary.offer_accept_rate }}%{% else %}—{% endif %}</div><div class="stat-label">Offers accepted ({{ summary.offers_total }} sent)</div></div></div>
+  <div class="col-6 col-md-4">
+    <div class="stat-card stat-combo stat-bad">
+      <div class="stat-sub"><div class="stat-value">{{ summary.delivered }}</div><div class="stat-label">Delivered</div></div>
+      <div class="stat-sub"><div class="stat-value">{{ summary.cancelled }}</div><div class="stat-label">Cancelled</div></div>
+      <div class="stat-sub"><div class="stat-value">{{ summary.expired }}</div><div class="stat-label">Expired</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="stat-card stat-combo stat-warn">
+      <div class="stat-sub"><div class="stat-value">{% if summary.avg_hours_to_claim is not None %}{{ summary.avg_hours_to_claim }}h{% else %}—{% endif %}</div><div class="stat-label">Avg time to claim</div></div>
+      <div class="stat-sub"><div class="stat-value">{% if summary.offer_accept_rate is not None %}{{ summary.offer_accept_rate }}%{% else %}—{% endif %}</div><div class="stat-label">Offers accepted</div></div>
+    </div>
+  </div>
 </div>
 <div class="row g-4 mb-4">
   <div class="col-lg-7"><div class="app-card h-100">

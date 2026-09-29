@@ -21,15 +21,29 @@
 {% endif %}
 
 <div class="row g-3 mb-4">
-  <div class="col-6 col-md-3 col-lg"><div class="stat-card"><div class="stat-value">{{ counts.pending }}</div><div class="stat-label">Pending</div></div></div>
-  <div class="col-6 col-md-3 col-lg"><div class="stat-card"><div class="stat-value">{{ counts.in_progress }}</div><div class="stat-label">In progress</div></div></div>
-  <div class="col-6 col-md-3 col-lg"><div class="stat-card"><div class="stat-value">{{ counts.delivered }}</div><div class="stat-label">Delivered</div></div></div>
-  <div class="col-6 col-md-3 col-lg"><div class="stat-card"><div class="stat-value">{{ counts.live_offers }}</div><div class="stat-label">Live offers</div></div></div>
-  <div class="col-6 col-md-3 col-lg"><div class="stat-card"><div class="stat-value">{{ counts.expired }}</div><div class="stat-label">Expired</div></div></div>
-  <div class="col-6 col-md-3 col-lg"><div class="stat-card"><div class="stat-value">{{ counts.cancelled }}</div><div class="stat-label">Cancelled</div></div></div>
-  <div class="col-6 col-md-3 col-lg"><div class="stat-card"><div class="stat-value">{{ counts.donors }}</div><div class="stat-label">Donors</div></div></div>
-  <div class="col-6 col-md-3 col-lg"><div class="stat-card"><div class="stat-value">{{ counts.recipients }}</div><div class="stat-label">Recipients</div></div></div>
-  <div class="col-6 col-md-3 col-lg"><div class="stat-card"><div class="stat-value">{{ counts.drivers }}</div><div class="stat-label">Drivers</div></div></div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card stat-combo">
+      <div class="stat-sub"><div class="stat-value">{{ counts.pending }}</div><div class="stat-label">Pending</div></div>
+      <div class="stat-sub"><div class="stat-value">{{ counts.in_progress }}</div><div class="stat-label">In progress</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3"><div class="stat-card stat-good"><div class="stat-value">{{ counts.delivered }}</div><div class="stat-label">Delivered</div></div></div>
+  <div class="col-6 col-lg-3"><div class="stat-card stat-warn"><div class="stat-value">{{ counts.live_offers }}</div><div class="stat-label">Live offers</div></div></div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card stat-combo stat-bad">
+      <div class="stat-sub"><div class="stat-value">{{ counts.expired }}</div><div class="stat-label">Expired</div></div>
+      <div class="stat-sub"><div class="stat-value">{{ counts.cancelled }}</div><div class="stat-label">Cancelled</div></div>
+    </div>
+  </div>
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-12">
+    <div class="stat-card stat-combo stat-info">
+      <div class="stat-sub"><div class="stat-value">{{ counts.donors }}</div><div class="stat-label">Donors</div></div>
+      <div class="stat-sub"><div class="stat-value">{{ counts.recipients }}</div><div class="stat-label">Recipients</div></div>
+      <div class="stat-sub"><div class="stat-value">{{ counts.drivers }}</div><div class="stat-label">Drivers</div></div>
+    </div>
+  </div>
 </div>
 <div class="app-card">
   <div class="table-responsive">

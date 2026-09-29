@@ -10,11 +10,15 @@
 {% include "partials/role_guide.html" with role="donor" %}
 
 <div class="row g-3 mb-4">
-  <div class="col-6 col-md"><div class="stat-card"><div class="stat-value">{{ stats.active }}</div><div class="stat-label">Active listings</div></div></div>
-  <div class="col-6 col-md"><div class="stat-card"><div class="stat-value">{{ stats.kg_delivered }} kg</div><div class="stat-label">Delivered so far</div></div></div>
-  <div class="col-6 col-md"><div class="stat-card"><div class="stat-value">{{ stats.meals }}</div><div class="stat-label">Estimated meals</div></div></div>
-  <div class="col-6 col-md"><div class="stat-card"><div class="stat-value">{{ stats.expiring }}</div><div class="stat-label">Expiring within 3 hrs</div></div></div>
-  <div class="col-6 col-md"><div class="stat-card"><div class="stat-value">{% if stats.fulfilment is not None %}{{ stats.fulfilment }}%{% else %}—{% endif %}</div><div class="stat-label">Fulfilment rate</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ stats.active }}</div><div class="stat-label">Active listings</div></div></div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-combo stat-good">
+      <div class="stat-sub"><div class="stat-value">{{ stats.kg_delivered }} kg</div><div class="stat-label">Delivered</div></div>
+      <div class="stat-sub"><div class="stat-value">{{ stats.meals }}</div><div class="stat-label">Est. meals</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3"><div class="stat-card stat-warn"><div class="stat-value">{{ stats.expiring }}</div><div class="stat-label">Expiring within 3 hrs</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card stat-info"><div class="stat-value">{% if stats.fulfilment is not None %}{{ stats.fulfilment }}%{% else %}—{% endif %}</div><div class="stat-label">Fulfilment rate</div></div></div>
 </div>
 
 <div class="row g-4">

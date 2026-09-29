@@ -10,10 +10,10 @@
 {% include "partials/role_guide.html" with role="recipient" %}
 
 <div class="row g-3 mb-4">
-  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ stats.offers }}</div><div class="stat-label">Offers waiting for you</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card stat-warn"><div class="stat-value">{{ stats.offers }}</div><div class="stat-label">Offers waiting for you</div></div></div>
   <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ stats.active }}</div><div class="stat-label">Claims in progress</div></div></div>
-  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ stats.kg_received }} kg</div><div class="stat-label">Received · ≈{{ stats.meals }} meals</div></div></div>
-  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{% if stats.nearest is not None %}{{ stats.nearest|km }}{% else %}—{% endif %}</div><div class="stat-label">Nearest open donation</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card stat-good"><div class="stat-value">{{ stats.kg_received }} kg</div><div class="stat-label">Received · ≈{{ stats.meals }} meals</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card stat-info"><div class="stat-value">{% if stats.nearest is not None %}{{ stats.nearest|km }}{% else %}—{% endif %}</div><div class="stat-label">Nearest open donation</div></div></div>
 </div>
 
 {% if offers %}
