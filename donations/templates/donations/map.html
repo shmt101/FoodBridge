@@ -31,16 +31,31 @@
   var areas = JSON.parse(document.getElementById('map-areas').textContent);
   var me = JSON.parse(document.getElementById('map-me').textContent);
   var map = L.map('fbmap', { scrollWheelZoom: false }).setView([-33.87, 151.05], 9);
-  var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19, subdomains: 'abcd',
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-  }).addTo(map);
-  tiles.on('tileerror', function () { document.getElementById('mapfallback').classList.remove('d-none'); });
+  // Tile provider with automatic fallback: some free tile hosts (OSM's own server, and
+  // CARTO's anonymous endpoint) block or now require a key for production traffic, and that
+  // can change without notice. If the first provider fails outright, we try a second one
+  // automatically, and only show the "couldn't load" message if both fail - so this keeps
+  // working even if one provider's policy changes again.
+  var providers = [
+    { url: 'https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png',
+      options: { maxZoom: 18, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, style by Wikimedia' } },
+    { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+      options: { maxZoom: 19, attribution: 'Tiles &copy; Esri' } },
+  ];
+  var current = null;
+  function tryProvider(i) {
+    if (current) map.removeLayer(current);
+    if (i >= providers.length) { document.getElementById('mapfallback').classList.remove('d-none'); return; }
+    var ok = false;
+    current = L.tileLayer(providers[i].url, providers[i].options).addTo(map);
+    current.on('load', function () { ok = true; });
+    current.on('tileerror', function () { if (!ok) tryProvider(i + 1); });
+  }
+  tryProvider(0);
   var pts = [];
   areas.forEach(function (a) {
     var r = 9 + Math.min(a.count, 8) * 3;
-    var m = L.
-	circleMarker([a.lat, a.lng], { radius: r, color: '#073b2a', weight: 2, fillColor: '#22c55e', fillOpacity: .75 }).addTo(map);
+    var m = L.circleMarker([a.lat, a.lng], { radius: r, color: '#073b2a', weight: 2, fillColor: '#22c55e', fillOpacity: .75 }).addTo(map);
     var rows = a.items.map(function (i) { return '<li>' + esc(i.food) + ' &middot; ' + i.kg + ' kg &middot; ' + esc(i.status) + '</li>'; }).join('');
     m.bindPopup('<strong>' + esc(a.label) + '</strong><br>' + a.count + ' active listing(s), ' + a.kg + ' kg<ul class="ps-3 mb-0 mt-1">' + rows + '</ul>');
     pts.push([a.lat, a.lng]);
