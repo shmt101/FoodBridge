@@ -37,6 +37,8 @@
             <div class="tbl-note mt-1">Used for nearby matching and distances.</div></div>
           <div class="col-md-7 mb-3"><label class="form-label">Street address {% if user.is_driver %}<span class="text-danger">*</span>{% endif %}</label>{{ form.address }}</div>
           <div class="col-12 mb-3"><label class="form-label">Bio</label>{{ form.bio }}</div>
+          <div class="col-12 mb-3 form-check ms-1">{{ form.email_notifications }}
+            <label class="form-check-label" for="{{ form.email_notifications.id_for_label }}">Also email me important updates (offers, approvals, cancellations)</label></div>
           <div class="col-12 mb-3"><label class="form-label">Avatar</label>{{ form.avatar }}</div>
         </div>
         {% if form.errors %}<div class="alert alert-danger py-2 small">{% for field in form %}{% for e in field.errors %}<div>{{ field.label }}: {{ e }}</div>{% endfor %}{% endfor %}</div>{% endif %}

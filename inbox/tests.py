@@ -102,7 +102,8 @@ class NotificationFlowTests(TestCase):
         from datetime import timedelta
         self.client.post(reverse("donations:donor_dashboard"), {
             "food_item": "Soup", "quantity_kg": "8", "pickup_address": "1 Main St", "notes": "",
-            "pickup_area": "nsw-parramatta",
+            "pickup_area": "nsw-parramatta", "safety_confirmed": "on",
+            "food_category": "bakery", "storage": "ambient", "date_type": "use_by",
             "expires_at": (timezone.localtime() + timedelta(hours=6)).strftime("%Y-%m-%dT%H:%M"),
         })
         donation = Donation.objects.get(food_item="Soup")

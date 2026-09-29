@@ -1,14 +1,18 @@
 """Notification helpers: who gets told what, and when."""
+import logging
 import threading
 from contextlib import contextmanager
 from decimal import Decimal
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core import mail
 from django.urls import reverse
 
 from .models import Notification
 
 _state = threading.local()
+log = logging.getLogger(__name__)
 
 
 @contextmanager
@@ -36,7 +40,33 @@ def notify(users, kind, text, donation=None, link=""):
         rows.append(Notification(user=user, kind=kind, text=text[:255], donation=donation, link=link))
     if rows:
         Notification.objects.bulk_create(rows)
+        _email(rows, users)
     return len(rows)
+
+
+def _email(rows, users):
+    """Also email important notifications. Never lets a mail problem break the app."""
+    kinds = getattr(settings, "EMAIL_NOTIFICATION_KINDS", set())
+    by_pk = {u.pk: u for u in users if u is not None}
+    messages = []
+    for n in rows:
+        user = by_pk.get(n.user_id if hasattr(n, "user_id") and n.user_id else n.user.pk)
+        if n.kind not in kinds or user is None or not user.email or not getattr(user, "email_notifications", True):
+            continue
+        site = getattr(settings, "SITE_URL", "").rstrip("/")
+        link = f"{site}{n.link or reverse('accounts:dashboard')}"
+        body = (f"Hi {user.first_name or user.username},\n\n{n.text}\n\nOpen FoodBridge: {link}\n\n"
+                f"You get these emails because email updates are on for your account. "
+                f"Turn them off any time in your profile: {site}{reverse('accounts:profile')}\n")
+        messages.append(mail.EmailMessage(f"FoodBridge: {n.get_kind_display()}", body,
+                                          settings.DEFAULT_FROM_EMAIL, [user.email]))
+    if not messages:
+        return
+    try:
+        connection = mail.get_connection(fail_silently=False)
+        connection.send_messages(messages)
+    except Exception:  # noqa: BLE001 - email must never break a claim/delivery
+        log.exception("Could not send %d notification email(s)", len(messages))
 
 
 def _kg(quantity):

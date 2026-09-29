@@ -143,3 +143,21 @@ ALERT_RADIUS_KM = 50         # "new listing near you" alerts go to drivers withi
 OFFER_PROCESS_THROTTLE_SECONDS = 15   # how often page loads sweep for expired offers/listings
 MEALS_PER_KG = 2             # rule of thumb used for "meals" estimates (OzHarvest's own figures work out ~2)
 CO2E_KG_PER_KG_FOOD = 1.0    # est. kg CO2-equivalent avoided per kg of food rescued
+
+# ---- Email -------------------------------------------------------------------
+# Until SMTP details are set (env vars), emails are printed to the server console
+# so nothing breaks. To send real email set EMAIL_HOST, EMAIL_HOST_USER and
+# EMAIL_HOST_PASSWORD (and optionally EMAIL_PORT / EMAIL_USE_TLS / DEFAULT_FROM_EMAIL).
+if os.environ.get("EMAIL_HOST"):
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = os.environ["EMAIL_HOST"]
+    EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+    EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "1") == "1"
+    EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+    EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "FoodBridge <no-reply@2026s2e.winproject.com.au>")
+SITE_URL = os.environ.get("SITE_URL", "https://2026s2e.winproject.com.au")
+# Which notification kinds are also emailed (users can opt out in their profile).
+EMAIL_NOTIFICATION_KINDS = {"approval", "offer", "released", "cancelled", "expired", "expiring", "opened", "issue"}

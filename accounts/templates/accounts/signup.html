@@ -52,6 +52,10 @@
             </ul>
           </div>
         {% endif %}
+        <div class="form-check mt-3">
+          {{ form.agree_terms }}
+          <label class="form-check-label small" for="{{ form.agree_terms.id_for_label }}">I agree to the <a href="{% url 'terms' %}" target="_blank">Terms of Use</a> and <a href="{% url 'privacy' %}" target="_blank">Privacy Policy</a></label>
+        </div>
         <div class="approval-note"><i class="bi bi-person-check-fill"></i><span>An admin approves every new Donor, Recipient and Driver account. You'll get a notification as soon as it's done.</span></div>
         <button class="btn btn-forest w-100 py-2 fw-bold" type="submit">Create account <i class="bi bi-arrow-right"></i></button>
       </form>

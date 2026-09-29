@@ -13,5 +13,9 @@ urlpatterns = [
     path("reports/delivered.csv", views.export_delivered_csv, name="export_delivered_csv"),
     path("reports/", views.partnership_report, name="partnership_report"),
     path("reports/mine/", views.my_activity_report, name="my_report"),
+    path("feedback/", views.feedback_list, name="feedback"),
+    path("map/", views.live_map, name="map"),
+    path("map.json", views.map_data, name="map_data"),
+    path("<int:pk>/rate/", views.submit_feedback, name="rate"),
     path("<int:pk>/", views.donation_detail, name="detail"),
 ]

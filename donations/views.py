@@ -7,15 +7,18 @@ from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 
 from accounts.areas import AREAS, STATES, area_label, distance_km
 from accounts.decorators import admin_required, role_required
 from accounts.models import User
 from . import analytics, workflow
+from inbox import services as notes
+from inbox.models import Notification
 from .forms import (DONOR_CANCEL_REASONS, DRIVER_WITHDRAW_REASONS, RECIPIENT_RELEASE_REASONS,
-                    DonationForm, DonationSearchForm, ReasonForm)
-from .models import Donation, Offer
+                    DonationForm, DonationSearchForm, FeedbackForm, ReasonForm)
+from .models import Donation, Feedback, Offer
 
 Status = Donation.Status
 
@@ -99,11 +102,102 @@ def donation_detail(request, pk):
     u = request.user
     if not (u.is_admin_role() or u.pk in (d.donor_id, d.recipient_id, d.driver_id)):
         raise PermissionDenied("You can only view donations you're involved in.")
+    mine = Feedback.objects.filter(donation=d, author=u).first()
+    can_rate = d.status == Status.DELIVERED and u.pk in (d.donor_id, d.recipient_id, d.driver_id)
+    initial = {"rating": str(mine.rating), "comment": mine.comment, "is_issue": mine.is_issue} if mine else None
     return render(request, "donations/donation_detail.html", {
         "d": d, "events": d.events.select_related("actor"),
         "offers": d.offers.select_related("user"),
         "leg_km": distance_km(d.effective_area, d.recipient.area) if d.recipient_id else None,
+        "can_rate": can_rate, "my_feedback": mine, "feedback_form": FeedbackForm(initial=initial),
+        "all_feedback": d.feedback.select_related("author") if u.is_admin_role() else None,
     })
+
+
+@login_required
+def submit_feedback(request, pk):
+    """A participant rates a delivered donation and can flag a problem."""
+    d = get_object_or_404(Donation, pk=pk)
+    u = request.user
+    if request.method != "POST" or d.status != Status.DELIVERED or u.pk not in (d.donor_id, d.recipient_id, d.driver_id):
+        raise PermissionDenied("You can only rate deliveries you took part in.")
+    form = FeedbackForm(request.POST)
+    if not form.is_valid():
+        messages.error(request, "Please choose a rating from 1 to 5.")
+        return redirect("donations:detail", pk=pk)
+    fb, created = Feedback.objects.update_or_create(
+        donation=d, author=u,
+        defaults={"rating": int(form.cleaned_data["rating"]), "comment": form.cleaned_data["comment"],
+                  "is_issue": form.cleaned_data["is_issue"], "resolved": False, "resolved_by": None, "resolved_at": None},
+    )
+    if fb.is_issue:
+        admins = User.objects.filter(is_active=True).filter(Q(role=User.Role.ADMIN) | Q(is_staff=True)).distinct()
+        notes.notify(admins, Notification.Kind.ISSUE,
+                     f"{u.display_name} reported a problem with '{d.food_item}': {fb.comment or 'no details given'}",
+                     d, "/donations/feedback/")
+    messages.success(request, "Thanks for the feedback." + (" An admin has been told about the problem." if fb.is_issue else ""))
+    return redirect("donations:detail", pk=pk)
+
+
+@admin_required
+def feedback_list(request):
+    """Admin: ratings and reported problems, with a resolve action."""
+    if request.method == "POST":
+        fb = get_object_or_404(Feedback, pk=request.POST.get("feedback_id"))
+        fb.resolved = True
+        fb.resolved_by = request.user
+        fb.resolved_at = timezone.now()
+        fb.save(update_fields=["resolved", "resolved_by", "resolved_at"])
+        notes.notify([fb.author], Notification.Kind.UPDATE,
+                     f"An admin looked at the problem you reported on '{fb.donation.food_item}' and marked it resolved.",
+                     fb.donation, reverse("donations:detail", args=[fb.donation_id]))
+        messages.success(request, "Marked as resolved.")
+        return redirect(request.get_full_path())
+    show = request.GET.get("show", "issues")
+    rows = Feedback.objects.select_related("donation", "author", "donation__donor")
+    if show == "issues":
+        rows = rows.filter(is_issue=True, resolved=False)
+    elif show == "resolved":
+        rows = rows.filter(is_issue=True, resolved=True)
+    return render(request, "donations/feedback.html", {
+        "rows": rows[:200], "show": show, "summary": analytics.feedback_summary(),
+    })
+
+
+# --------------------------------------------------------------------------- map
+def _active_by_area():
+    groups = {}
+    active = Donation.objects.filter(status__in=[Status.PENDING, Status.ASSIGNED, Status.IN_TRANSIT]).select_related("donor")
+    for d in active:
+        area = AREAS.get(d.effective_area)
+        if not area:
+            continue
+        g = groups.setdefault(area.key, {"key": area.key, "label": f"{area.label}, {area.state}",
+                                         "lat": area.lat, "lng": area.lng, "count": 0, "kg": 0.0, "items": []})
+        g["count"] += 1
+        g["kg"] += float(d.quantity_kg)
+        if len(g["items"]) < 5:
+            g["items"].append({"food": d.food_item, "kg": float(d.quantity_kg), "donor": d.donor_name, "status": d.status})
+    for g in groups.values():
+        g["kg"] = round(g["kg"], 1)
+    return sorted(groups.values(), key=lambda g: -g["count"])
+
+
+def map_data(request):
+    """Aggregated by area only - never exposes street addresses."""
+    from django.http import JsonResponse
+    workflow.maybe_process_timeouts()
+    return JsonResponse({"areas": _active_by_area()})
+
+
+def live_map(request):
+    workflow.maybe_process_timeouts()
+    me = AREAS.get(request.user.area) if request.user.is_authenticated else None
+    return render(request, "donations/map.html", {
+        "areas": _active_by_area(),
+        "me": {"label": area_label(me.key), "lat": me.lat, "lng": me.lng} if me else None,
+    })
+
 
 
 # --------------------------------------------------------------------------- donor
@@ -269,6 +363,7 @@ def admin_dashboard(request):
             "donors": User.objects.filter(role=User.Role.DONOR).count(),
             "recipients": User.objects.filter(role=User.Role.RECIPIENT).count(),
             "drivers": User.objects.filter(role=User.Role.DRIVER).count(),
+            "open_issues": Feedback.objects.filter(is_issue=True, resolved=False).count(),
             "awaiting_approval": User.objects.filter(approval_status=User.Approval.PENDING)
                                  .exclude(role=User.Role.ADMIN).exclude(is_staff=True).count(),
         },
@@ -392,21 +487,21 @@ def my_activity_report(request):
 def _export_report(kind, start, end, only=None):
     tables = {
         "donors": (["Donor", "Area", "Listings", "Kg listed", "Delivered", "Kg delivered", "Cancelled",
-                    "Expired", "Fulfilment %", "Avg hours to claim"],
+                    "Expired", "Fulfilment %", "Avg hours to claim", "Avg rating"],
                    lambda r: [r["name"], r["area"], r["listings"], r["kg_listed"], r["delivered"],
                               r["kg_delivered"], r["cancelled"], r["expired"], r["fulfilment"],
-                              r["avg_hours_to_claim"]],
+                              r["avg_hours_to_claim"], r["rating"]],
                    lambda: analytics.donor_rows(start, end, only=only if only and only.role == User.Role.DONOR else None)),
         "recipients": (["Pantry / recipient", "Area", "Claims", "Delivered", "Kg received", "Est. meals",
-                        "Claims released", "Offers", "Offers accepted", "Offers timed out", "Response %"],
+                        "Claims released", "Offers", "Offers accepted", "Offers timed out", "Response %", "Avg rating"],
                        lambda r: [r["name"], r["area"], r["claims"], r["delivered"], r["kg_received"], r["meals"],
                                   r["released"], r["offers"], r["offers_accepted"], r["offers_timed_out"],
-                                  r["response_rate"]],
+                                  r["response_rate"], r["rating"]],
                        lambda: analytics.recipient_rows(start, end, only=only if only and only.role == User.Role.RECIPIENT else None)),
         "drivers": (["Driver", "Area", "Profile ready", "Jobs", "Delivered", "Kg moved", "Approx km",
-                     "Withdrawn", "Avg hours to collect"],
+                     "Withdrawn", "Avg hours to collect", "Avg rating"],
                     lambda r: [r["name"], r["area"], "yes" if r["profile_ready"] else "no", r["jobs"],
-                               r["delivered"], r["kg_moved"], r["km"], r["withdrawn"], r["avg_hours_to_collect"]],
+                               r["delivered"], r["kg_moved"], r["km"], r["withdrawn"], r["avg_hours_to_collect"], r["rating"]],
                     lambda: analytics.driver_rows(start, end, only=only if only and only.role == User.Role.DRIVER else None)),
         "partnerships": (["Donor", "Pantry / recipient", "Deliveries", "Kg", "Est. meals", "Last delivery"],
                          lambda r: [r["donor"], r["recipient"], r["deliveries"], r["kg"], r["meals"],

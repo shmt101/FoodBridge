@@ -1,0 +1,52 @@
+{% extends "base_app.html" %}
+{% block title %}Manage users · FoodBridge{% endblock %}
+{% block content %}
+<div class="dash-top mb-3">
+  <div><h2 class="section-title mb-1">Manage users</h2>
+    <p class="text-muted mb-0">Search everyone, change a role, send an account back for review, or deactivate it.</p></div>
+  <div class="dash-actions">
+    <a class="btn btn-sm btn-outline-forest" href="{% url 'accounts:approvals' %}"><i class="bi bi-person-check"></i> Approvals</a>
+    <a class="btn btn-sm btn-outline-forest" href="{% url 'donations:admin_dashboard' %}"><i class="bi bi-arrow-left"></i> Dashboard</a>
+  </div>
+</div>
+<form method="get" class="filter-bar">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-5"><label class="form-label small fw-semibold mb-1">Search</label><input class="form-control" name="q" value="{{ q }}" placeholder="Name, username, email or organisation"></div>
+    <div class="col-md-3"><label class="form-label small fw-semibold mb-1">Role</label>
+      <select name="role" class="form-select"><option value="">All roles</option>{% for v, l in role_filter %}<option value="{{ v }}" {% if role == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+    <div class="col-md-2"><label class="form-label small fw-semibold mb-1">Status</label>
+      <select name="state" class="form-select"><option value="">Any</option>{% for v, l in approval_choices %}<option value="{{ v }}" {% if state == v %}selected{% endif %}>{{ l }}</option>{% endfor %}<option value="inactive" {% if state == 'inactive' %}selected{% endif %}>Deactivated</option></select></div>
+    <div class="col-md-2"><button class="btn btn-forest w-100" type="submit">Filter</button></div>
+  </div>
+</form>
+<div class="app-card"><div class="table-responsive">
+<table class="table align-middle mb-0">
+  <thead><tr><th>Person</th><th>Role</th><th>Status</th><th>Joined</th><th>Change</th></tr></thead>
+  <tbody>
+  {% for u in users %}
+    <tr>
+      <td><strong>{{ u.display_name }}</strong>{% if not u.is_active %} <span class="chip dist-far">Deactivated</span>{% endif %}<br><span class="tbl-note">@{{ u.username }} · {{ u.email|default:"no email" }}</span></td>
+      <td>{{ u.get_role_display }}{% if u.is_superuser %} <span class="chip">superuser</span>{% endif %}</td>
+      <td><span class="chip {% if u.approval_status == 'approved' %}dist-near{% elif u.approval_status == 'pending' %}dist-mid{% else %}dist-far{% endif %}">{{ u.get_approval_status_display }}</span></td>
+      <td class="text-nowrap">{{ u.date_joined|date:"d M Y" }}</td>
+      <td style="min-width:290px">
+        {% if u.pk == user.pk %}<span class="tbl-note">That's you</span>
+        {% elif u.is_superuser or u.is_admin_role %}<span class="tbl-note">Admin account</span>
+        {% else %}
+          <form method="post" class="d-flex flex-wrap gap-1 align-items-center">{% csrf_token %}
+            <input type="hidden" name="user_id" value="{{ u.pk }}">
+            <select name="role" class="form-select form-select-sm" style="width:auto">{% for r in roles %}<option value="{{ r }}" {% if u.role == r %}selected{% endif %}>{{ r|title }}</option>{% endfor %}</select>
+            <button name="action" value="role" class="btn btn-sm btn-outline-forest">Set role</button>
+            <button name="action" value="pending" class="btn btn-sm btn-outline-secondary">Re-review</button>
+            {% if u.is_active %}<button name="action" value="deactivate" class="btn btn-sm btn-outline-danger" onclick="return confirm('Deactivate this account?')">Deactivate</button>
+            {% else %}<button name="action" value="activate" class="btn btn-sm btn-forest">Reactivate</button>{% endif %}
+          </form>
+        {% endif %}
+      </td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="5">{% include "partials/empty_state.html" with icon="bi-people" title="No users match" text="Try clearing the filters." %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div></div>
+{% endblock %}

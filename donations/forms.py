@@ -4,6 +4,7 @@ from django import forms
 from django.utils import timezone
 
 from accounts.areas import STATES, area_choices, state_choices
+from accounts.validators import validate_street_address
 from .models import Donation
 
 DT_LOCAL = "%Y-%m-%dT%H:%M"
@@ -24,16 +25,31 @@ class DonationForm(forms.ModelForm):
         help_text="After this time the listing closes automatically if it hasn't been collected.",
     )
 
+    safety_confirmed = forms.BooleanField(
+        required=True, label="I confirm this food is safe to eat, stored correctly and within its date",
+        error_messages={"required": "Please confirm the food is safe and within its date."},
+    )
+
     class Meta:
         model = Donation
-        fields = ["food_item", "quantity_kg", "pickup_area", "pickup_address", "expires_at", "notes"]
-        widgets = {"notes": forms.Textarea(attrs={"rows": 2})}
+        fields = ["food_item", "food_category", "quantity_kg", "storage", "date_type", "allergen_note",
+                  "pickup_area", "pickup_address", "expires_at", "notes", "safety_confirmed"]
+        labels = {"food_category": "Category", "storage": "Storage", "date_type": "Date on the food",
+                  "allergen_note": "Allergens (optional)"}
+        widgets = {"notes": forms.Textarea(attrs={"rows": 2}),
+                   "allergen_note": forms.TextInput(attrs={"placeholder": "e.g. contains nuts, gluten"})}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         for name, field in self.fields.items():
-            css = "form-select" if name == "pickup_area" else "form-control"
+            if name == "safety_confirmed":
+                css = "form-check-input"
+            elif name in ("pickup_area", "food_category", "storage", "date_type"):
+                css = "form-select"
+            else:
+                css = "form-control"
             field.widget.attrs.setdefault("class", css)
+        self.fields["pickup_address"].validators.append(validate_street_address)
         if not self.is_bound:
             default = timezone.localtime(timezone.now() + timedelta(hours=24)).replace(second=0, microsecond=0)
             self.fields["expires_at"].initial = default.strftime(DT_LOCAL)
@@ -96,4 +112,19 @@ class DonationSearchForm(forms.Form):
     radius = forms.ChoiceField(
         required=False, choices=RADIUS_CHOICES, label="Distance",
         widget=forms.Select(attrs={"class": "form-select"}),
+    )
+
+
+class FeedbackForm(forms.Form):
+    rating = forms.ChoiceField(
+        choices=[(str(i), f"{i}") for i in range(5, 0, -1)], label="How did it go?",
+        widget=forms.RadioSelect,
+    )
+    comment = forms.CharField(
+        required=False, max_length=500, label="Comment (optional)",
+        widget=forms.Textarea(attrs={"rows": 2, "class": "form-control", "placeholder": "What went well or badly?"}),
+    )
+    is_issue = forms.BooleanField(
+        required=False, label="Report a problem for an admin to look at",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
     )

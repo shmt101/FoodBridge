@@ -62,6 +62,7 @@
         <span class="chip {{ d.km_to_pickup|dist_class }}"><i class="bi bi-geo-alt"></i> {% if d.km_to_pickup is not None %}{{ d.km_to_pickup|km }} to pickup{% else %}{{ d.area_display|default:"Area not set" }}{% endif %}</span>
         {% if d.km_leg is not None %}<span class="chip chip-soft"><i class="bi bi-arrow-right"></i> {{ d.km_leg|km }} delivery leg</span>{% endif %}
       </div>
+      <div class="mb-2">{% include "partials/food_chips.html" %}</div>
       <div class="timer"><i class="bi bi-stopwatch"></i> Reserved for you · <span class="countdown" data-expires="{{ d.offer.expires_at|iso }}" data-done="lapsed">{{ d.offer.expires_at|date:"H:i" }}</span></div>
       <div class="d-flex gap-2">
         <form method="post" class="mb-0">{% csrf_token %}<input type="hidden" name="action" value="accept"><input type="hidden" name="donation_id" value="{{ d.pk }}">
@@ -91,7 +92,7 @@
         <tbody>
         {% for d in needs_driver %}
           <tr>
-            <td><strong>{{ d.food_item }}</strong><br><span class="tbl-note">{{ d.quantity_kg }} kg{% if d.expires_at %} · <span class="countdown" data-expires="{{ d.expires_at|iso }}" data-done="expired">{{ d.expires_at|date:"d M H:i" }}</span>{% endif %}</span></td>
+            <td><strong>{{ d.food_item }}</strong><br>{% include "partials/food_chips.html" %}<br><span class="tbl-note">{{ d.quantity_kg }} kg{% if d.expires_at %} · <span class="countdown" data-expires="{{ d.expires_at|iso }}" data-done="expired">{{ d.expires_at|date:"d M H:i" }}</span>{% endif %}</span></td>
             <td>{{ d.area_display|default:"—" }}<br><span class="tbl-note">{{ d.pickup_address|default:"—" }}</span></td>
             <td>
               {% if d.km_to_pickup is not None %}

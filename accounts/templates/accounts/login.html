@@ -7,7 +7,8 @@
     <div class="auth-form">
       <h1>Log in</h1>
       <p class="sub">Use the username you signed up with.</p>
-      {% if form.errors %}<div class="alert alert-danger py-2"><i class="bi bi-exclamation-triangle"></i> That username and password don't match. Try again.</div>{% endif %}
+      {% if locked %}<div class="alert alert-warning py-2"><i class="bi bi-lock"></i> Too many failed attempts. For your security, try again in 15 minutes or <a href="{% url 'accounts:password_reset' %}">reset your password</a>.</div>
+      {% elif form.errors %}<div class="alert alert-danger py-2"><i class="bi bi-exclamation-triangle"></i> That username and password don't match. Try again.</div>{% endif %}
       <form method="post" novalidate>
         {% csrf_token %}
         {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
@@ -20,6 +21,7 @@
           <div class="field-icon has-toggle"><i class="bi bi-lock lead-i"></i>{{ form.password }}
             <button type="button" class="pw-toggle" data-toggle-password="{{ form.password.id_for_label }}" aria-label="Show or hide password"><i class="bi bi-eye"></i></button></div>
         </div>
+        <div class="text-end mb-3" style="margin-top:-1rem"><a class="btn-link-quiet" href="{% url 'accounts:password_reset' %}">Forgot password?</a></div>
         <button class="btn btn-forest w-100 py-2 fw-bold" type="submit">Log in <i class="bi bi-arrow-right"></i></button>
       </form>
       <p class="auth-foot mb-1">New to FoodBridge? <a href="{% url 'accounts:signup' %}">Create an account</a></p>

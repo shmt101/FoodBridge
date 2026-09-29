@@ -10,7 +10,10 @@
         <h3 class="section-title mb-0">{{ d.food_item }}</h3>
         <span class="badge-status {{ d.status|status_class }}">{{ d.status }}</span>
       </div>
-      <p class="text-muted">{{ d.quantity_kg }} kg from {{ d.donor_name }}</p>
+      <p class="text-muted mb-2">{{ d.quantity_kg }} kg from {{ d.donor_name }}</p>
+      <div class="mb-3">{% include "partials/food_chips.html" %}
+        <span class="chip chip-soft">{{ d.get_date_type_display }} date</span>
+        {% if d.safety_confirmed %}<span class="chip dist-near"><i class="bi bi-shield-check"></i> Donor confirmed safe</span>{% endif %}</div>
       <dl class="row small mb-0">
         <dt class="col-5">Pickup area</dt><dd class="col-7">{{ d.area_display|default:"—" }}</dd>
         <dt class="col-5">Pickup address</dt><dd class="col-7">{{ d.pickup_address|default:"—" }}</dd>
@@ -38,6 +41,26 @@
         {% empty %}<li class="text-muted">No events recorded yet.</li>{% endfor %}
       </ul>
     </div>
+    {% if can_rate %}
+    <div class="app-card mb-4" id="feedback">
+      <h5 class="section-title mb-1">How did this delivery go?</h5>
+      <p class="tbl-note mb-3">{% if my_feedback %}You rated this {{ my_feedback.rating }}/5. You can update it below.{% else %}Your rating helps everyone improve.{% endif %}</p>
+      <form method="post" action="{% url 'donations:rate' d.pk %}">{% csrf_token %}
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          {% for radio in feedback_form.rating %}<label class="chip {% if radio.data.selected %}dist-near{% endif %}" style="cursor:pointer;padding:.4rem .9rem">{{ radio.tag }} {{ radio.choice_label }} ★</label>{% endfor %}
+        </div>
+        <div class="mb-3">{{ feedback_form.comment }}</div>
+        <div class="form-check mb-3">{{ feedback_form.is_issue }}<label class="form-check-label small" for="{{ feedback_form.is_issue.id_for_label }}">{{ feedback_form.is_issue.label }}</label></div>
+        <button class="btn btn-forest btn-sm" type="submit">Save feedback</button>
+      </form>
+    </div>
+    {% endif %}
+    {% if all_feedback %}
+    <div class="app-card mb-4">
+      <h5 class="section-title mb-3">Feedback on this delivery</h5>
+      {% for f in all_feedback %}<div class="mb-2 small"><strong>{{ f.author.display_name }}</strong> · {{ f.rating }}/5 {% if f.is_issue %}<span class="chip dist-far">Problem{% if f.resolved %} · resolved{% endif %}</span>{% endif %}<br><span class="text-muted">{{ f.comment|default:"No comment" }}</span></div>{% endfor %}
+    </div>
+    {% endif %}
     {% if offers %}
     <div class="app-card">
       <h5 class="section-title mb-3">Offers</h5>

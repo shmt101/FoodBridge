@@ -35,6 +35,24 @@ class Donation(models.Model):
         # everyone
         OTHER = "other", "Other"
 
+    class Category(models.TextChoices):
+        PRODUCE = "produce", "Fresh produce"
+        BAKERY = "bakery", "Bakery"
+        DAIRY = "dairy", "Dairy & eggs"
+        MEAT_FISH = "meat_fish", "Meat & fish"
+        PREPARED = "prepared", "Prepared meals"
+        PACKAGED = "packaged", "Packaged / pantry"
+        OTHER = "other", "Other"
+
+    class Storage(models.TextChoices):
+        AMBIENT = "ambient", "Room temperature"
+        CHILLED = "chilled", "Keep chilled"
+        FROZEN = "frozen", "Keep frozen"
+
+    class DateType(models.TextChoices):
+        USE_BY = "use_by", "Use by"
+        BEST_BEFORE = "best_before", "Best before"
+
     donor = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
         related_name="donations_made", limit_choices_to={"role": "DONOR"},
@@ -50,6 +68,12 @@ class Donation(models.Model):
 
     food_item = models.CharField(max_length=150)
     quantity_kg = models.DecimalField(max_digits=8, decimal_places=2)
+    food_category = models.CharField(max_length=12, choices=Category.choices, default=Category.OTHER)
+    storage = models.CharField(max_length=8, choices=Storage.choices, default=Storage.AMBIENT)
+    date_type = models.CharField(max_length=12, choices=DateType.choices, default=DateType.USE_BY)
+    allergen_note = models.CharField(max_length=150, blank=True, help_text="e.g. contains nuts, gluten, dairy")
+    safety_confirmed = models.BooleanField(
+        default=False, help_text="Donor confirmed the food is safe, correctly stored and within its date.")
     pickup_address = models.CharField(max_length=255, blank=True)
     pickup_area = models.CharField(max_length=40, blank=True)
     notes = models.TextField(blank=True)
@@ -185,3 +209,25 @@ class DonationEvent(models.Model):
 
     def __str__(self):
         return f"#{self.donation_id} {self.kind}"
+
+
+class Feedback(models.Model):
+    """A participant's rating of a delivered donation, optionally flagging a problem."""
+
+    donation = models.ForeignKey(Donation, on_delete=models.CASCADE, related_name="feedback")
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="feedback_given")
+    rating = models.PositiveSmallIntegerField(help_text="1 (poor) to 5 (excellent)")
+    comment = models.CharField(max_length=500, blank=True)
+    is_issue = models.BooleanField(default=False, help_text="Something went wrong and an admin should look.")
+    resolved = models.BooleanField(default=False)
+    resolved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [models.UniqueConstraint(fields=["donation", "author"], name="one_feedback_per_person")]
+
+    def __str__(self):
+        return f"{self.author_id} on #{self.donation_id}: {self.rating}/5"

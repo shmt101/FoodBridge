@@ -42,6 +42,9 @@ class User(AbstractUser):
         max_length=150, blank=True,
         help_text="Business name (donor), pantry/org name (recipient), or leave blank.",
     )
+    email_notifications = models.BooleanField(
+        default=True, help_text="Also email me important updates (offers, approvals, cancellations).",
+    )
     bio = models.TextField(blank=True, help_text="Short description shown on your profile.")
     avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
 

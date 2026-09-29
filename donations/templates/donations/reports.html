@@ -65,12 +65,12 @@
     <a class="btn btn-sm btn-outline-forest" href="?export=donors&range={{ range }}&from={{ from }}&to={{ to }}"><i class="bi bi-download"></i> CSV</a>
   </div>
   <div class="table-responsive"><table class="table align-middle mb-0">
-    <thead><tr><th>Donor</th><th>Area</th><th>Listings</th><th>Kg listed</th><th>Delivered</th><th>Kg delivered</th><th>Cancelled</th><th>Expired</th><th>Fulfilment</th><th>Avg claim time</th></tr></thead>
+    <thead><tr><th>Donor</th><th>Area</th><th>Listings</th><th>Kg listed</th><th>Delivered</th><th>Kg delivered</th><th>Cancelled</th><th>Expired</th><th>Fulfilment</th><th>Avg claim time</th><th>Rating</th></tr></thead>
     <tbody>
     {% for r in donors %}
       <tr><td><strong>{{ r.name }}</strong></td><td>{{ r.area|default:"—" }}</td><td>{{ r.listings }}</td><td>{{ r.kg_listed }}</td><td>{{ r.delivered }}</td><td>{{ r.kg_delivered }}</td><td>{{ r.cancelled }}</td><td>{{ r.expired }}</td>
-        <td>{% if r.fulfilment is not None %}{{ r.fulfilment }}%{% else %}—{% endif %}</td><td>{% if r.avg_hours_to_claim is not None %}{{ r.avg_hours_to_claim }} h{% else %}—{% endif %}</td></tr>
-    {% empty %}<tr><td colspan="10">{% include "partials/empty_state.html" with icon="bi-shop" title="No donor activity" text="No donations were listed in this period." %}</td></tr>{% endfor %}
+        <td>{% if r.fulfilment is not None %}{{ r.fulfilment }}%{% else %}—{% endif %}</td><td>{% if r.avg_hours_to_claim is not None %}{{ r.avg_hours_to_claim }} h{% else %}—{% endif %}</td><td>{% if r.rating is not None %}{{ r.rating }} ★{% else %}—{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="11">{% include "partials/empty_state.html" with icon="bi-shop" title="No donor activity" text="No donations were listed in this period." %}</td></tr>{% endfor %}
     </tbody>
   </table></div>
 </div>
@@ -83,13 +83,13 @@
     <a class="btn btn-sm btn-outline-forest" href="?export=recipients&range={{ range }}&from={{ from }}&to={{ to }}"><i class="bi bi-download"></i> CSV</a>
   </div>
   <div class="table-responsive"><table class="table align-middle mb-0">
-    <thead><tr><th>Pantry</th><th>Area</th><th>Claims</th><th>Delivered</th><th>Kg received</th><th>Est. meals</th><th>Released</th><th>Offers</th><th>Response rate</th></tr></thead>
+    <thead><tr><th>Pantry</th><th>Area</th><th>Claims</th><th>Delivered</th><th>Kg received</th><th>Est. meals</th><th>Released</th><th>Offers</th><th>Response rate</th><th>Rating</th></tr></thead>
     <tbody>
     {% for r in recipients %}
       <tr><td><strong>{{ r.name }}</strong></td><td>{{ r.area|default:"—" }}</td><td>{{ r.claims }}</td><td>{{ r.delivered }}</td><td>{{ r.kg_received }}</td><td>{{ r.meals }}</td><td>{{ r.released }}</td>
         <td>{{ r.offers_accepted }}/{{ r.offers }}{% if r.offers_timed_out %} <span class="tbl-note">({{ r.offers_timed_out }} timed out)</span>{% endif %}</td>
-        <td>{% if r.response_rate is not None %}{{ r.response_rate }}%{% else %}—{% endif %}</td></tr>
-    {% empty %}<tr><td colspan="9">{% include "partials/empty_state.html" with icon="bi-house-heart" title="No pantry activity" text="No claims or offers in this period." %}</td></tr>{% endfor %}
+        <td>{% if r.response_rate is not None %}{{ r.response_rate }}%{% else %}—{% endif %}</td><td>{% if r.rating is not None %}{{ r.rating }} ★{% else %}—{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="10">{% include "partials/empty_state.html" with icon="bi-house-heart" title="No pantry activity" text="No claims or offers in this period." %}</td></tr>{% endfor %}
     </tbody>
   </table></div>
 </div>
@@ -102,12 +102,12 @@
     <a class="btn btn-sm btn-outline-forest" href="?export=drivers&range={{ range }}&from={{ from }}&to={{ to }}"><i class="bi bi-download"></i> CSV</a>
   </div>
   <div class="table-responsive"><table class="table align-middle mb-0">
-    <thead><tr><th>Driver</th><th>Area</th><th>Jobs</th><th>Delivered</th><th>Kg moved</th><th>Approx. km</th><th>Withdrawn</th><th>Avg time to collect</th></tr></thead>
+    <thead><tr><th>Driver</th><th>Area</th><th>Jobs</th><th>Delivered</th><th>Kg moved</th><th>Approx. km</th><th>Withdrawn</th><th>Avg time to collect</th><th>Rating</th></tr></thead>
     <tbody>
     {% for r in drivers %}
       <tr><td><strong>{{ r.name }}</strong>{% if not r.profile_ready %} <span class="chip dist-mid">Profile incomplete</span>{% endif %}</td><td>{{ r.area|default:"—" }}</td><td>{{ r.jobs }}</td><td>{{ r.delivered }}</td><td>{{ r.kg_moved }}</td><td>{{ r.km }}</td><td>{{ r.withdrawn }}</td>
-        <td>{% if r.avg_hours_to_collect is not None %}{{ r.avg_hours_to_collect }} h{% else %}—{% endif %}</td></tr>
-    {% empty %}<tr><td colspan="8">{% include "partials/empty_state.html" with icon="bi-truck" title="No driver activity" text="No deliveries were taken in this period." %}</td></tr>{% endfor %}
+        <td>{% if r.avg_hours_to_collect is not None %}{{ r.avg_hours_to_collect }} h{% else %}—{% endif %}</td><td>{% if r.rating is not None %}{{ r.rating }} ★{% else %}—{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="9">{% include "partials/empty_state.html" with icon="bi-truck" title="No driver activity" text="No deliveries were taken in this period." %}</td></tr>{% endfor %}
     </tbody>
   </table></div>
 </div>

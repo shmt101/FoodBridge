@@ -41,6 +41,7 @@ class Notification(models.Model):
         EXPIRED = "expired", "Expired"
         OPENED = "opened", "Open to all"
         APPROVAL = "approval", "Account approval"
+        ISSUE = "issue", "Reported issue"
 
     ICONS = {
         "new_donation": "bi-basket2",
@@ -57,6 +58,7 @@ class Notification(models.Model):
         "expired": "bi-calendar-x",
         "opened": "bi-broadcast",
         "approval": "bi-person-check",
+        "issue": "bi-flag",
     }
 
     user = models.ForeignKey(

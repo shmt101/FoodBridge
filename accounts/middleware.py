@@ -1,8 +1,8 @@
 from django.shortcuts import redirect
 
 # Pages an unapproved (pending / rejected) user may still see.
-_EXACT = {"/", "/home/", "/about/"}
-_PREFIXES = ("/static/", "/media/", "/admin/", "/accounts/", "/donations/live/")
+_EXACT = {"/", "/home/", "/about/", "/privacy/", "/terms/"}
+_PREFIXES = ("/static/", "/media/", "/admin/", "/accounts/", "/donations/live/", "/donations/map")
 
 
 class ApprovalGateMiddleware:

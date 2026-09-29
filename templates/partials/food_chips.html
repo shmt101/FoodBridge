@@ -1,0 +1,3 @@
+<span class="chip chip-soft">{{ d.get_food_category_display }}</span>
+<span class="chip {% if d.storage != 'ambient' %}dist-mid{% else %}chip-soft{% endif %}"><i class="bi {% if d.storage == 'frozen' %}bi-snow{% elif d.storage == 'chilled' %}bi-thermometer-low{% else %}bi-box{% endif %}"></i> {{ d.get_storage_display }}</span>
+{% if d.allergen_note %}<span class="chip dist-far"><i class="bi bi-exclamation-triangle"></i> {{ d.allergen_note }}</span>{% endif %}

@@ -1,5 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth import login
+from django.core.cache import cache
+from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.db.models import Count
@@ -14,8 +16,38 @@ from .forms import ProfileForm, SignUpForm
 from .models import User
 
 
+MAX_LOGIN_FAILURES = 5
+LOCKOUT_SECONDS = 15 * 60
+
+
+def _throttle_key(request, username):
+    ip = (request.META.get("HTTP_X_FORWARDED_FOR", "").split(",")[0].strip()
+          or request.META.get("REMOTE_ADDR", ""))
+    return f"login-fail:{(username or '').lower()}:{ip}"
+
+
 class RoleAwareLoginView(LoginView):
+    """Login with a simple brute-force guard: 5 wrong passwords locks that user+IP for 15 minutes."""
+
     template_name = "accounts/login.html"
+
+    def post(self, request, *args, **kwargs):
+        username = request.POST.get("username", "")
+        if cache.get(_throttle_key(request, username), 0) >= MAX_LOGIN_FAILURES:
+            form = self.get_form()
+            form.full_clean()
+            self.locked = True
+            return self.render_to_response(self.get_context_data(form=form, locked=True), status=429)
+        return super().post(request, *args, **kwargs)
+
+    def form_invalid(self, form):
+        key = _throttle_key(self.request, self.request.POST.get("username", ""))
+        cache.set(key, cache.get(key, 0) + 1, LOCKOUT_SECONDS)
+        return super().form_invalid(form)
+
+    def form_valid(self, form):
+        cache.delete(_throttle_key(self.request, self.request.POST.get("username", "")))
+        return super().form_valid(form)
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)
@@ -109,4 +141,59 @@ def approvals_queue(request):
     return render(request, "accounts/approvals.html", {
         "tab": tab, "users": users,
         "counts": {k: counts.get(k, 0) for k in ("pending", "approved", "rejected")},
+    })
+
+
+ROLE_CHOICES = [User.Role.DONOR, User.Role.RECIPIENT, User.Role.DRIVER]
+
+
+@admin_required
+def manage_users(request):
+    """Admin user management: search, deactivate / reactivate, change role, send back to pending."""
+    if request.method == "POST":
+        target = get_object_or_404(User, pk=request.POST.get("user_id"))
+        action = request.POST.get("action")
+        protected = target.is_superuser or target.is_admin_role()
+        if target.pk == request.user.pk:
+            messages.error(request, "You can't change your own account here.")
+        elif protected and not request.user.is_superuser:
+            messages.error(request, "Only a superuser can change admin accounts.")
+        elif action == "deactivate":
+            target.is_active = False
+            target.save(update_fields=["is_active"])
+            messages.success(request, f"Deactivated {target.display_name}. They can no longer log in.")
+        elif action == "activate":
+            target.is_active = True
+            target.save(update_fields=["is_active"])
+            messages.success(request, f"Reactivated {target.display_name}.")
+        elif action == "role" and request.POST.get("role") in ROLE_CHOICES and not protected:
+            target.role = request.POST["role"]
+            target.save(update_fields=["role"])
+            messages.success(request, f"{target.display_name} is now a {target.get_role_display().lower()}.")
+        elif action == "pending" and not protected:
+            target.approval_status = User.Approval.PENDING
+            target.approved_at = None
+            target.save(update_fields=["approval_status", "approved_at"])
+            messages.success(request, f"{target.display_name} was sent back to the approval queue.")
+        else:
+            messages.error(request, "That change isn't allowed.")
+        return redirect(request.get_full_path())
+
+    users = User.objects.all().order_by("-date_joined")
+    q = request.GET.get("q", "").strip()
+    role = request.GET.get("role", "")
+    state = request.GET.get("state", "")
+    if q:
+        users = users.filter(Q(username__icontains=q) | Q(email__icontains=q) | Q(first_name__icontains=q)
+                             | Q(last_name__icontains=q) | Q(organisation_name__icontains=q))
+    if role in User.Role.values:
+        users = users.filter(role=role)
+    if state == "inactive":
+        users = users.filter(is_active=False)
+    elif state in User.Approval.values:
+        users = users.filter(approval_status=state)
+    return render(request, "accounts/manage_users.html", {
+        "users": users[:200], "q": q, "role": role, "state": state,
+        "roles": ROLE_CHOICES, "role_filter": User.Role.choices,
+        "approval_choices": User.Approval.choices,
     })

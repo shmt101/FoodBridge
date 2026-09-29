@@ -5,6 +5,8 @@
 {% include "partials/dashboard_hello.html" with title="Admin / Auditor dashboard" %}
 <div class="dash-actions mb-4">
   <a class="btn btn-forest" href="{% url 'accounts:approvals' %}"><i class="bi bi-person-check"></i> Approvals{% if counts.awaiting_approval %} <span class="nav-badge" style="background:#fff;color:#073b2a">{{ counts.awaiting_approval }}</span>{% endif %}</a>
+  <a class="btn btn-outline-forest" href="{% url 'donations:feedback' %}"><i class="bi bi-flag"></i> Feedback &amp; issues{% if counts.open_issues %} <span class="nav-badge">{{ counts.open_issues }}</span>{% endif %}</a>
+  <a class="btn btn-outline-forest" href="{% url 'accounts:manage_users' %}"><i class="bi bi-people"></i> Manage users</a>
   <a class="btn btn-outline-forest" href="{% url 'donations:partnership_report' %}"><i class="bi bi-diagram-3"></i> Partnership activity report</a>
   <a class="btn btn-outline-forest" href="{% url 'donations:export_delivered_csv' %}"><i class="bi bi-download"></i> Delivered-food CSV</a>
 </div>

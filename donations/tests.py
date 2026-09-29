@@ -58,7 +58,7 @@ class ApprovalTests(TestCase):
 
     def signup(self, role="DONOR", username="newbie", **extra):
         data = {"username": username, "first_name": "New", "last_name": "User", "email": "n@example.com",
-                "role": role, "password1": self.SIGNUP_PW, "password2": self.SIGNUP_PW}
+                "role": role, "password1": self.SIGNUP_PW, "password2": self.SIGNUP_PW, "agree_terms": "on"}
         data.update(extra)
         return self.client.post(reverse("accounts:signup"), data)
 
@@ -395,7 +395,8 @@ class DashboardViewTests(TestCase):
         exp = (timezone.localtime() + timedelta(hours=6)).strftime("%Y-%m-%dT%H:%M")
         resp = self.post("donor", "donations:donor_dashboard", {
             "food_item": "Soup", "quantity_kg": "8", "pickup_area": "nsw-parramatta",
-            "pickup_address": "1 Church St", "expires_at": exp, "notes": ""})
+            "pickup_address": "1 Church St", "expires_at": exp, "notes": "", "safety_confirmed": "on",
+            "food_category": "bakery", "storage": "ambient", "date_type": "use_by"})
         self.assertContains(resp, "Donation listed")
         d = Donation.objects.get(food_item="Soup")
         self.assertEqual(d.pickup_area, "nsw-parramatta")
@@ -590,3 +591,290 @@ class ReportTests(TestCase):
         self.assertNotIn("Corner Bakery", csv_resp.content.decode())
         self.client.login(username="boss", password=PW)
         self.assertEqual(self.client.get(reverse("donations:my_report")).status_code, 302)
+
+
+# =============================================================================
+# v5 additions: email, password reset, throttling, validation, user management,
+# food safety, feedback, map, legal pages, smoke check
+# =============================================================================
+from django.core import mail
+from django.core.cache import cache
+from django.core.management import call_command
+from io import StringIO
+from unittest import mock
+
+from accounts.validators import looks_like_street_address
+from .models import Feedback
+
+
+class EmailAndPasswordResetTests(TestCase):
+    def setUp(self):
+        self.donor = make_user("donor", User.Role.DONOR, area="nsw-parramatta", address="1 Church St", email="d@example.com")
+        self.pantry = make_user("pantry", User.Role.RECIPIENT, area="nsw-auburn", address="2 A St", email="p@example.com")
+
+    def test_password_reset_flow_end_to_end(self):
+        resp = self.client.post(reverse("accounts:password_reset"), {"email": "d@example.com"})
+        self.assertRedirects(resp, reverse("accounts:password_reset_done"))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("/accounts/reset/", mail.outbox[0].body)
+        link = [l for l in mail.outbox[0].body.split() if "/accounts/reset/" in l][0]
+        path = "/" + link.split("://", 1)[1].split("/", 1)[1]
+        page = self.client.get(path, follow=True)
+        self.assertContains(page, "Choose a new password")
+        post_url = page.redirect_chain[-1][0] if page.redirect_chain else path
+        resp = self.client.post(post_url, {"new_password1": "Brand-new-Pass-991", "new_password2": "Brand-new-Pass-991"})
+        self.assertRedirects(resp, reverse("accounts:password_reset_complete"))
+        self.assertTrue(self.client.login(username="donor", password="Brand-new-Pass-991"))
+
+    def test_reset_for_unknown_email_reveals_nothing_and_sends_nothing(self):
+        resp = self.client.post(reverse("accounts:password_reset"), {"email": "nobody@example.com"})
+        self.assertRedirects(resp, reverse("accounts:password_reset_done"))
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_offer_is_emailed_with_a_deep_link(self):
+        make_donation(self.donor)
+        offer_mails = [m for m in mail.outbox if m.to == ["p@example.com"]]
+        self.assertEqual(len(offer_mails), 1)
+        self.assertIn("Offer", offer_mails[0].subject)
+        self.assertIn("/donations/dashboard/recipient/", offer_mails[0].body)
+
+    def test_opt_out_is_respected_and_unimportant_kinds_are_not_emailed(self):
+        self.pantry.email_notifications = False
+        self.pantry.save()
+        d = make_donation(self.donor)
+        self.assertFalse([m for m in mail.outbox if m.to == ["p@example.com"]])
+        driver = make_user("dd", User.Role.DRIVER, area="nsw-homebush", address="3 C St", email="dd@example.com")
+        d2 = make_donation(self.donor, food_item="More bread")
+        # 'new listing' heads-up to drivers is in-app only
+        self.assertFalse([m for m in mail.outbox if m.to == ["dd@example.com"]])
+
+    def test_mail_failure_never_breaks_the_workflow(self):
+        with mock.patch("django.core.mail.get_connection", side_effect=RuntimeError("smtp down")):
+            d = make_donation(self.donor)
+        self.assertTrue(d.offers.exists())
+        workflow.claim(d.pk, self.pantry)
+        self.assertEqual(Donation.objects.get(pk=d.pk).status, "Assigned")
+
+    def test_signup_and_approval_emails(self):
+        User.objects.create_user("boss", password=PW, role="ADMIN", is_staff=True, email="boss@example.com")
+        self.client.post(reverse("accounts:signup"), {
+            "username": "newbie", "first_name": "New", "email": "n@example.com", "role": "DRIVER",
+            "password1": "S0mething-long-77", "password2": "S0mething-long-77", "agree_terms": "on"})
+        self.assertTrue([m for m in mail.outbox if m.to == ["boss@example.com"]])
+        approvals.approve_user(User.objects.get(username="newbie"), User.objects.get(username="boss"))
+        self.assertTrue([m for m in mail.outbox if m.to == ["n@example.com"] and "approved" in m.body])
+
+
+class SecurityAndValidationTests(TestCase):
+    def setUp(self):
+        cache.clear()
+        make_user("alice", User.Role.DONOR)
+
+    def test_login_locks_after_five_failures_and_recovers_the_right_way(self):
+        for _ in range(5):
+            self.client.post(reverse("accounts:login"), {"username": "alice", "password": "wrong"})
+        resp = self.client.post(reverse("accounts:login"), {"username": "alice", "password": PW})
+        self.assertEqual(resp.status_code, 429)
+        self.assertContains(resp, "Too many failed attempts", status_code=429)
+        # a different user from the same IP is unaffected
+        make_user("bob", User.Role.DONOR)
+        self.assertEqual(self.client.post(reverse("accounts:login"), {"username": "bob", "password": PW}).status_code, 302)
+
+    def test_successful_login_resets_the_counter(self):
+        for _ in range(4):
+            self.client.post(reverse("accounts:login"), {"username": "alice", "password": "wrong"})
+        self.assertEqual(self.client.post(reverse("accounts:login"), {"username": "alice", "password": PW}).status_code, 302)
+        self.client.logout()
+        for _ in range(4):
+            self.client.post(reverse("accounts:login"), {"username": "alice", "password": "wrong"})
+        self.assertEqual(self.client.post(reverse("accounts:login"), {"username": "alice", "password": PW}).status_code, 302)
+
+    def test_address_sanity_check(self):
+        for good in ("12 George St", "Unit 4/9 Park Ave", "1 Church St", "4 C St"):
+            self.assertTrue(looks_like_street_address(good), good)
+        for bad in ("x", "N/A", "123", "somewhere", "Sydney", ""):
+            self.assertFalse(looks_like_street_address(bad), bad)
+
+    def test_profile_and_signup_reject_junk_addresses_but_allow_blank(self):
+        self.client.login(username="alice", password=PW)
+        base = {"first_name": "A", "last_name": "", "email": "a@example.com", "organisation_name": "", "phone": "",
+                "area": "nsw-parramatta", "bio": ""}
+        self.assertContains(self.client.post(reverse("accounts:profile"), {**base, "address": "x"}), "street address")
+        self.assertEqual(self.client.post(reverse("accounts:profile"), {**base, "address": "12 George St"}).status_code, 302)
+        self.assertEqual(self.client.post(reverse("accounts:profile"), {**base, "address": ""}).status_code, 302)
+
+    def test_signup_requires_terms(self):
+        data = {"username": "t1", "first_name": "T", "email": "t@example.com", "role": "DONOR",
+                "password1": "S0mething-long-77", "password2": "S0mething-long-77"}
+        resp = self.client.post(reverse("accounts:signup"), data)
+        self.assertContains(resp, "Terms of Use")
+        self.assertFalse(User.objects.filter(username="t1").exists())
+
+    def test_legal_pages_are_public(self):
+        for name in ("privacy", "terms"):
+            self.assertContains(self.client.get(reverse(name)), "not legal advice")
+
+
+class ManageUsersTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user("boss", password=PW, role="ADMIN", is_staff=True)
+        self.other_admin = User.objects.create_user("boss2", password=PW, role="ADMIN", is_staff=True)
+        self.donor = make_user("donor", User.Role.DONOR, org="Corner Bakery")
+        self.client.login(username="boss", password=PW)
+
+    def act(self, user, action, **extra):
+        return self.client.post(reverse("accounts:manage_users"), {"user_id": user.pk, "action": action, **extra})
+
+    def test_deactivated_user_cannot_log_in_and_can_be_reactivated(self):
+        self.act(self.donor, "deactivate")
+        self.donor.refresh_from_db()
+        self.assertFalse(self.donor.is_active)
+        self.client.logout()
+        self.assertFalse(self.client.login(username="donor", password=PW))
+        self.client.login(username="boss", password=PW)
+        self.act(self.donor, "activate")
+        self.client.logout()
+        self.assertTrue(self.client.login(username="donor", password=PW))
+
+    def test_role_change_and_send_back_to_review(self):
+        self.act(self.donor, "role", role="DRIVER")
+        self.donor.refresh_from_db()
+        self.assertEqual(self.donor.role, "DRIVER")
+        self.act(self.donor, "pending")
+        self.donor.refresh_from_db()
+        self.assertFalse(self.donor.is_approved)
+
+    def test_cannot_touch_self_other_admins_or_invalid_roles(self):
+        self.act(self.admin, "deactivate")
+        self.act(self.other_admin, "deactivate")
+        self.act(self.donor, "role", role="ADMIN")
+        self.admin.refresh_from_db(); self.other_admin.refresh_from_db(); self.donor.refresh_from_db()
+        self.assertTrue(self.admin.is_active and self.other_admin.is_active)
+        self.assertEqual(self.donor.role, "DONOR")
+
+    def test_search_filter_and_admin_only(self):
+        page = self.client.get(reverse("accounts:manage_users"), {"q": "bakery"})
+        self.assertContains(page, "Corner Bakery")
+        self.assertNotContains(page, "@boss2")
+        self.client.login(username="donor", password=PW)
+        self.assertEqual(self.client.get(reverse("accounts:manage_users")).status_code, 403)
+
+
+class FoodSafetyTests(TestCase):
+    def setUp(self):
+        self.donor = make_user("donor", User.Role.DONOR, area="nsw-parramatta", address="1 Church St")
+        self.client.login(username="donor", password=PW)
+
+    def post(self, **extra):
+        exp = (timezone.localtime() + timedelta(hours=6)).strftime("%Y-%m-%dT%H:%M")
+        data = {"food_item": "Soup", "food_category": "prepared", "quantity_kg": "8", "storage": "chilled",
+                "date_type": "use_by", "allergen_note": "contains dairy", "pickup_area": "nsw-parramatta",
+                "pickup_address": "1 Church St", "expires_at": exp, "notes": "", "safety_confirmed": "on"}
+        data.update(extra)
+        return self.client.post(reverse("donations:donor_dashboard"), data, follow=True)
+
+    def test_safety_fields_are_saved_and_shown(self):
+        page = self.post()
+        d = Donation.objects.get(food_item="Soup")
+        self.assertEqual((d.food_category, d.storage, d.date_type, d.safety_confirmed), ("prepared", "chilled", "use_by", True))
+        self.assertContains(page, "Keep chilled")
+        self.assertContains(page, "contains dairy")
+
+    def test_donor_must_confirm_safety_and_give_a_real_address(self):
+        self.post(safety_confirmed="")
+        self.post(pickup_address="x")
+        self.assertFalse(Donation.objects.exists())
+
+
+class FeedbackTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user("boss", password=PW, role="ADMIN", is_staff=True)
+        self.donor = make_user("donor", User.Role.DONOR, area="nsw-parramatta", address="1 Church St", org="Corner Bakery")
+        self.pantry = make_user("pantry", User.Role.RECIPIENT, area="nsw-auburn", address="2 A St", org="Hope Kitchen")
+        self.driver = make_user("driver", User.Role.DRIVER, area="nsw-homebush", address="3 C St")
+        self.stranger = make_user("stranger", User.Role.DRIVER, area="nsw-homebush", address="4 C St")
+        self.d = make_donation(self.donor)
+        workflow.claim(self.d.pk, self.pantry)
+        workflow.accept_pickup(self.d.pk, self.driver)
+
+    def rate(self, username, rating="5", **extra):
+        self.client.login(username=username, password=PW)
+        return self.client.post(reverse("donations:rate", args=[self.d.pk]),
+                                {"rating": rating, "comment": "ok", **extra}, follow=True)
+
+    def test_cannot_rate_before_delivery(self):
+        self.client.login(username="pantry", password=PW)
+        self.assertEqual(self.client.post(reverse("donations:rate", args=[self.d.pk]), {"rating": "5"}).status_code, 403)
+
+    def test_participants_rate_stranger_cannot_and_rating_updates_not_duplicates(self):
+        workflow.mark_delivered(self.d.pk, self.driver)
+        self.assertEqual(self.client.get(reverse("donations:detail", args=[self.d.pk])).status_code, 302)  # anonymous -> login
+        self.rate("pantry", "4")
+        self.rate("pantry", "2")
+        self.assertEqual(Feedback.objects.filter(author=self.pantry).count(), 1)
+        self.assertEqual(Feedback.objects.get(author=self.pantry).rating, 2)
+        self.client.login(username="stranger", password=PW)
+        self.assertEqual(self.client.post(reverse("donations:rate", args=[self.d.pk]), {"rating": "5"}).status_code, 403)
+        self.assertContains(self.rate("donor", "5"), "Thanks for the feedback")
+
+    def test_rating_must_be_valid(self):
+        workflow.mark_delivered(self.d.pk, self.driver)
+        self.rate("pantry", "9")
+        self.assertFalse(Feedback.objects.exists())
+
+    def test_issue_notifies_admins_and_admin_can_resolve(self):
+        workflow.mark_delivered(self.d.pk, self.driver)
+        self.rate("pantry", "1", is_issue="on", comment="Food was warm")
+        n = Notification.objects.get(user=self.admin, kind="issue")
+        self.assertIn("Food was warm", n.text)
+        self.client.login(username="boss", password=PW)
+        page = self.client.get(reverse("donations:feedback"))
+        self.assertContains(page, "Food was warm")
+        fb = Feedback.objects.get()
+        self.client.post(reverse("donations:feedback"), {"feedback_id": fb.pk})
+        fb.refresh_from_db()
+        self.assertTrue(fb.resolved)
+        self.assertTrue(Notification.objects.filter(user=self.pantry, text__contains="marked it resolved").exists())
+        self.assertEqual(analytics.feedback_summary()["open_issues"], 0)
+
+    def test_ratings_appear_in_partner_reports(self):
+        workflow.mark_delivered(self.d.pk, self.driver)
+        self.rate("pantry", "4")
+        self.rate("driver", "5")
+        self.rate("donor", "3")
+        donor = {r["name"]: r for r in analytics.donor_rows()}["Corner Bakery"]
+        self.assertEqual(donor["rating"], 4.5)          # pantry 4 + driver 5; donor's own 3 excluded
+        self.assertEqual(analytics.recipient_rows()[0]["rating"], 4.0)   # donor 3 + driver 5
+        self.client.login(username="boss", password=PW)
+        self.assertIn("4.5", self.client.get(reverse("donations:partnership_report"),
+                                              {"export": "donors", "range": "all"}).content.decode())
+
+
+@override_settings(OFFER_PROCESS_THROTTLE_SECONDS=0)
+class MapAndSmokeTests(TestCase):
+    def setUp(self):
+        self.donor = make_user("donor", User.Role.DONOR, area="nsw-parramatta", address="99 Secret Lane")
+        make_donation(self.donor, food_item="Map bread", pickup_area="nsw-sydney-cbd", pickup_address="55 Private Rd")
+        make_donation(self.donor, food_item="Map soup", pickup_area="nsw-sydney-cbd", pickup_address="55 Private Rd")
+        make_donation(self.donor, food_item="Old", pickup_area="nsw-newcastle", status="Delivered")
+
+    def test_map_json_aggregates_by_area_and_never_leaks_addresses(self):
+        data = self.client.get(reverse("donations:map_data")).json()
+        self.assertEqual(len(data["areas"]), 1)
+        a = data["areas"][0]
+        self.assertEqual((a["label"], a["count"], a["kg"]), ("Sydney CBD, NSW", 2, 20.0))
+        self.assertNotIn("Private Rd", str(data))
+        self.assertNotIn("Secret Lane", str(data))
+
+    def test_map_page_is_public_and_pending_users_can_see_it(self):
+        self.assertContains(self.client.get(reverse("donations:map")), "Donations map")
+        make_user("waiting", User.Role.DONOR, approved=False)
+        self.client.login(username="waiting", password=PW)
+        self.assertEqual(self.client.get(reverse("donations:map")).status_code, 200)
+
+    def test_smoke_check_passes_and_leaves_no_data(self):
+        before = (User.objects.count(), Donation.objects.count())
+        out = StringIO()
+        call_command("smoke_check", stdout=out)
+        self.assertIn("All checks passed", out.getvalue())
+        self.assertEqual(before, (User.objects.count(), Donation.objects.count()))

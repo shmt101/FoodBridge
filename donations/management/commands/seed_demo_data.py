@@ -127,6 +127,11 @@ class Command(BaseCommand):
                     quantity_kg=Decimal(random.randrange(2, 30)),
                     pickup_area=area, pickup_address=f"{random.randint(1, 240)} {random.choice(STREETS)}",
                     notes=fake.sentence() if random.random() > 0.5 else "", status=status, expires_at=expires,
+                    food_category=random.choice([c[0] for c in Donation.Category.choices]),
+                    storage=random.choice([c[0] for c in Donation.Storage.choices]),
+                    date_type=random.choice([c[0] for c in Donation.DateType.choices]),
+                    allergen_note=random.choice(["", "", "contains gluten", "contains dairy", "may contain nuts"]),
+                    safety_confirmed=True,
                 )
                 claimed = listed + timedelta(minutes=random.randint(10, 300))
                 picked = claimed + timedelta(minutes=random.randint(15, 240))

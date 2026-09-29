@@ -305,3 +305,8 @@ dialog.fb-dialog .dlg-close{background:none;border:0;font-size:1.3rem;color:var(
 .about-page .sec-p{color:var(--fb-muted);max-width:720px}
 .attrib{font-size:.78rem;color:var(--fb-muted)}
 .attrib a{color:var(--fb-green);font-weight:700}
+
+.app-footer{border-top:1px solid #dce8df;background:#fff;padding:18px 0;margin-top:32px;font-size:.85rem;color:#5b6b62}
+.app-footer a{color:#16a34a;font-weight:600;text-decoration:none}
+.legal h2{font-size:1.15rem;font-weight:800;color:#073b2a;margin-top:1.6rem}
+.legal p,.legal li{color:#33443b;font-size:.95rem;line-height:1.6}

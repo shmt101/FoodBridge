@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 
 from accounts.areas import distance_km
-from .models import Donation, DonationEvent, Offer
+from .models import Donation, DonationEvent, Feedback, Offer
 
 Status = Donation.Status
 
@@ -184,6 +184,7 @@ def donor_rows(start=None, end=None, only=None):
             "expired": sum(1 for d in ds if d.status == Status.EXPIRED),
             "fulfilment": round(100 * len(delivered) / terminal) if terminal else None,
             "avg_hours_to_claim": _avg(_hours(d.claimed_at - d.date_listed) for d in ds if d.claimed_at),
+            "rating": _avg_rating(u, "donor"),
         })
     return [r for r in rows if r["listings"] or only]
 
@@ -222,6 +223,7 @@ def recipient_rows(start=None, end=None, only=None):
             "offers": sum(oc.values()), "offers_accepted": oc["accepted"],
             "offers_timed_out": oc["timed_out"],
             "response_rate": round(100 * oc["accepted"] / answered) if answered else None,
+            "rating": _avg_rating(u, "recipient"),
         })
     return [r for r in rows if r["claims"] or r["offers"] or only]
 
@@ -253,6 +255,7 @@ def driver_rows(start=None, end=None, only=None):
             "km": round(km, 1), "withdrawn": withdrawn.get(u.pk, 0),
             "avg_hours_to_collect": _avg(
                 _hours(d.picked_up_at - d.claimed_at) for d in ds if d.picked_up_at and d.claimed_at),
+            "rating": _avg_rating(u, "driver"),
         })
     return [r for r in rows if r["jobs"] or only]
 
@@ -280,3 +283,20 @@ def partnership_rows(start=None, end=None, only=None):
         r["meals"] = meals_from_kg(r["kg"])
     rows.sort(key=lambda r: (-r["kg"], r["donor"]))
     return rows
+
+
+def _avg_rating(user, field):
+    """Average rating other people gave on donations this user took part in (None if none)."""
+    ratings = Feedback.objects.filter(**{f"donation__{field}": user}).exclude(author=user).values_list("rating", flat=True)
+    ratings = list(ratings)
+    return round(sum(ratings) / len(ratings), 1) if ratings else None
+
+
+def feedback_summary():
+    fb = Feedback.objects.all()
+    ratings = list(fb.values_list("rating", flat=True))
+    return {
+        "count": len(ratings),
+        "avg": round(sum(ratings) / len(ratings), 1) if ratings else None,
+        "open_issues": fb.filter(is_issue=True, resolved=False).count(),
+    }

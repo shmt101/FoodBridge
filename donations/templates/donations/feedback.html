@@ -1,0 +1,37 @@
+{% extends "base_app.html" %}
+{% block title %}Feedback &amp; issues · FoodBridge{% endblock %}
+{% block content %}
+<div class="dash-top mb-3">
+  <div><h2 class="section-title mb-1">Feedback &amp; issues</h2>
+    <p class="text-muted mb-0">Ratings after deliveries, and problems people have reported.</p></div>
+  <a class="btn btn-sm btn-outline-forest" href="{% url 'donations:admin_dashboard' %}"><i class="bi bi-arrow-left"></i> Dashboard</a>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-4"><div class="stat-card"><div class="stat-value">{{ summary.count }}</div><div class="stat-label">Ratings received</div></div></div>
+  <div class="col-4"><div class="stat-card"><div class="stat-value">{% if summary.avg is not None %}{{ summary.avg }} ★{% else %}—{% endif %}</div><div class="stat-label">Average rating</div></div></div>
+  <div class="col-4"><div class="stat-card"><div class="stat-value">{{ summary.open_issues }}</div><div class="stat-label">Open problems</div></div></div>
+</div>
+<div class="d-flex gap-2 mb-3">
+  <a class="btn btn-sm {% if show == 'issues' %}btn-forest{% else %}btn-outline-forest{% endif %}" href="?show=issues">Open problems</a>
+  <a class="btn btn-sm {% if show == 'resolved' %}btn-forest{% else %}btn-outline-forest{% endif %}" href="?show=resolved">Resolved</a>
+  <a class="btn btn-sm {% if show == 'all' %}btn-forest{% else %}btn-outline-forest{% endif %}" href="?show=all">All ratings</a>
+</div>
+<div class="app-card"><div class="table-responsive">
+<table class="table align-middle mb-0">
+  <thead><tr><th>Donation</th><th>From</th><th>Rating</th><th>Comment</th><th>When</th><th></th></tr></thead>
+  <tbody>
+  {% for f in rows %}
+    <tr>
+      <td><a href="{% url 'donations:detail' f.donation_id %}"><strong>{{ f.donation.food_item }}</strong></a><br><span class="tbl-note">{{ f.donation.donor_name }}</span></td>
+      <td>{{ f.author.display_name }}<br><span class="tbl-note">{{ f.author.get_role_display }}</span></td>
+      <td>{{ f.rating }} ★ {% if f.is_issue %}<span class="chip dist-far">Problem</span>{% endif %}</td>
+      <td style="max-width:320px">{{ f.comment|default:"—" }}</td>
+      <td class="text-nowrap">{{ f.created_at|date:"d M, H:i" }}</td>
+      <td>{% if f.is_issue and not f.resolved %}<form method="post">{% csrf_token %}<input type="hidden" name="feedback_id" value="{{ f.pk }}"><button class="btn btn-sm btn-forest">Mark resolved</button></form>{% elif f.resolved %}<span class="chip dist-near">Resolved</span>{% endif %}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="6">{% include "partials/empty_state.html" with icon="bi-flag" title="Nothing here" text="Ratings and reported problems appear here after deliveries." %}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div></div>
+{% endblock %}

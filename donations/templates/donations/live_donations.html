@@ -3,7 +3,9 @@
 {% block title %}Live Donations · FoodBridge{% endblock %}
 {% block content %}
 <div class="badge-status status-delivered mb-2 d-inline-block">Live · pulled from the database on every request</div>
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
 <h2 class="section-title mb-1">Donations in motion</h2>
+<a class="btn btn-sm btn-outline-forest" href="{% url 'donations:map' %}"><i class="bi bi-map"></i> Map view</a></div>
 <p class="text-muted mb-3">Choose where you are and see what's listed, claimed, in transit and delivered around you.</p>
 
 <form method="get" class="filter-bar">
@@ -35,7 +37,7 @@
     <tbody>
     {% for d in donations %}
       <tr>
-        <td><strong>{{ d.food_item }}</strong></td>
+        <td><strong>{{ d.food_item }}</strong><br>{% include "partials/food_chips.html" %}</td>
         <td>{{ d.quantity_kg }} kg</td>
         <td>{{ d.donor_name }}</td>
         <td>{{ d.area_display|default:"—" }}</td>

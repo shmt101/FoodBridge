@@ -1,0 +1,49 @@
+{% extends "base_app.html" %}
+{% block title %}Map · FoodBridge{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+  <div><h2 class="section-title mb-1">Donations map</h2>
+    <p class="text-muted mb-0">Active listings grouped by area. Street addresses are never shown publicly.</p></div>
+  <a class="btn btn-sm btn-outline-forest" href="{% url 'donations:live' %}"><i class="bi bi-list-ul"></i> List view</a>
+</div>
+<div class="row g-4">
+  <div class="col-lg-8"><div class="app-card p-2"><div id="fbmap" style="height:520px;border-radius:14px;background:#e9f2ec"></div>
+    <div id="mapfallback" class="tbl-note p-2 d-none">The map couldn't load (are you offline?). The list on the right has the same information.</div></div></div>
+  <div class="col-lg-4"><div class="app-card">
+    <h5 class="section-title mb-3">Areas with food</h5>
+    {% for a in areas %}
+      <div class="d-flex justify-content-between align-items-start border-bottom py-2">
+        <div><strong>{{ a.label }}</strong><div class="tbl-note">{% for i in a.items %}{{ i.food }} ({{ i.kg|floatformat:0 }} kg){% if not forloop.last %}, {% endif %}{% endfor %}</div></div>
+        <span class="chip dist-near">{{ a.count }}</span>
+      </div>
+    {% empty %}{% include "partials/empty_state.html" with icon="bi-map" title="No active listings" text="When donors list food it appears on the map by area." %}{% endfor %}
+  </div></div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+{{ areas|json_script:"map-areas" }}
+{{ me|json_script:"map-me" }}
+<script>
+(function () {
+  if (typeof L === 'undefined') { document.getElementById('mapfallback').classList.remove('d-none'); return; }
+  var areas = JSON.parse(document.getElementById('map-areas').textContent);
+  var me = JSON.parse(document.getElementById('map-me').textContent);
+  var map = L.map('fbmap', { scrollWheelZoom: false }).setView([-33.87, 151.05], 9);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
+  var pts = [];
+  areas.forEach(function (a) {
+    var r = 9 + Math.min(a.count, 8) * 3;
+    var m = L.circleMarker([a.lat, a.lng], { radius: r, color: '#073b2a', weight: 2, fillColor: '#22c55e', fillOpacity: .75 }).addTo(map);
+    var rows = a.items.map(function (i) { return '<li>' + esc(i.food) + ' &middot; ' + i.kg + ' kg &middot; ' + esc(i.status) + '</li>'; }).join('');
+    m.bindPopup('<strong>' + esc(a.label) + '</strong><br>' + a.count + ' active listing(s), ' + a.kg + ' kg<ul class="ps-3 mb-0 mt-1">' + rows + '</ul>');
+    pts.push([a.lat, a.lng]);
+  });
+  if (me) { L.marker([me.lat, me.lng]).addTo(map).bindPopup('You: ' + esc(me.label)); pts.push([me.lat, me.lng]); }
+  if (pts.length > 1) map.fitBounds(pts, { padding: [40, 40], maxZoom: 11 });
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+})();
+</script>
+{% endblock %}

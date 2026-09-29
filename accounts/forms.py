@@ -3,6 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 
 from .areas import area_choices
 from .models import User
+from .validators import validate_street_address
 
 
 class SignUpForm(UserCreationForm):
@@ -23,7 +24,12 @@ class SignUpForm(UserCreationForm):
     organisation_name = forms.CharField(max_length=150, required=False, label="Organisation")
     phone = forms.CharField(max_length=30, required=False)
     area = forms.ChoiceField(choices=area_choices(), required=False, label="Your area")
-    address = forms.CharField(max_length=255, required=False, label="Street address")
+    address = forms.CharField(max_length=255, required=False, label="Street address",
+                              validators=[validate_street_address])
+    agree_terms = forms.BooleanField(
+        required=True, label="I agree to the Terms of Use and Privacy Policy",
+        error_messages={"required": "Please accept the Terms of Use and Privacy Policy to continue."},
+    )
 
     class Meta:
         model = User
@@ -35,7 +41,7 @@ class SignUpForm(UserCreationForm):
         for name, field in self.fields.items():
             if name == "role":
                 continue
-            css = "form-select" if name == "area" else "form-control"
+            css = "form-select" if name == "area" else ("form-check-input" if name == "agree_terms" else "form-control")
             field.widget.attrs.setdefault("class", css)
         self.fields["password1"].widget.attrs["data-strength"] = "1"
 
@@ -59,12 +65,15 @@ class ProfileForm(forms.ModelForm):
     """The 'profile manager' — every role edits the same fields."""
 
     area = forms.ChoiceField(choices=area_choices(), required=False, label="Your area")
+    address = forms.CharField(max_length=255, required=False, label="Street address",
+                              validators=[validate_street_address])
 
     class Meta:
         model = User
         fields = [
             "first_name", "last_name", "email",
             "organisation_name", "phone", "area", "address", "bio", "avatar",
+            "email_notifications",
         ]
         widgets = {"bio": forms.Textarea(attrs={"rows": 3})}
 
@@ -73,6 +82,6 @@ class ProfileForm(forms.ModelForm):
         for name, field in self.fields.items():
             if name == "avatar":
                 continue
-            css = "form-select" if name == "area" else "form-control"
+            css = "form-select" if name == "area" else ("form-check-input" if name == "email_notifications" else "form-control")
             field.widget.attrs.setdefault("class", css)
         self.fields["address"].help_text = "Street address, e.g. 12 George St."

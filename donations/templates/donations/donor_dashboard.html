@@ -26,13 +26,21 @@
         {% csrf_token %}
         <input type="hidden" name="action" value="list">
         <div class="mb-3"><label class="form-label">Food item</label>{{ form.food_item }}{% for e in form.food_item.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
-        <div class="mb-3"><label class="form-label">Quantity (kg)</label>{{ form.quantity_kg }}{% for e in form.quantity_kg.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+        <div class="row g-2">
+          <div class="col-6 mb-3"><label class="form-label">Category</label>{{ form.food_category }}</div>
+          <div class="col-6 mb-3"><label class="form-label">Quantity (kg)</label>{{ form.quantity_kg }}{% for e in form.quantity_kg.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+          <div class="col-6 mb-3"><label class="form-label">Storage</label>{{ form.storage }}</div>
+          <div class="col-6 mb-3"><label class="form-label">Date on the food</label>{{ form.date_type }}</div>
+        </div>
+        <div class="mb-3"><label class="form-label">Allergens <span class="text-muted small">(optional)</span></label>{{ form.allergen_note }}</div>
         <div class="mb-3"><label class="form-label">Pickup area</label>{{ form.pickup_area }}{% for e in form.pickup_area.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
-        <div class="mb-3"><label class="form-label">Pickup address</label>{{ form.pickup_address }}</div>
+        <div class="mb-3"><label class="form-label">Pickup address</label>{{ form.pickup_address }}{% for e in form.pickup_address.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
         <div class="mb-3"><label class="form-label">{{ form.expires_at.label }}</label>{{ form.expires_at }}
           <div class="tbl-note mt-1">{{ form.expires_at.help_text }}</div>
           {% for e in form.expires_at.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
         <div class="mb-3"><label class="form-label">Notes</label>{{ form.notes }}</div>
+        <div class="form-check mb-3">{{ form.safety_confirmed }}<label class="form-check-label small" for="{{ form.safety_confirmed.id_for_label }}">{{ form.safety_confirmed.label }}</label>
+          {% for e in form.safety_confirmed.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
         <button class="btn btn-forest" type="submit">List donation</button>
       </form>
     </div>
@@ -47,7 +55,7 @@
         {% for d in donations %}
           <tr>
             <td><strong>{{ d.food_item }}</strong> <span class="text-muted">· {{ d.quantity_kg }} kg</span><br>
-              <span class="chip chip-soft"><i class="bi bi-geo-alt"></i> {{ d.area_display|default:"No area" }}</span></td>
+              <span class="chip chip-soft"><i class="bi bi-geo-alt"></i> {{ d.area_display|default:"No area" }}</span> {% include "partials/food_chips.html" %}</td>
             <td><span class="badge-status {{ d.status|status_class }}">{{ d.status }}</span>
               {% if d.status == 'Cancelled' and d.cancel_reason %}<div class="tbl-note mt-1">{{ d.get_cancel_reason_display }}</div>{% endif %}</td>
             <td class="text-nowrap">

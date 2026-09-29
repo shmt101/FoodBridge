@@ -70,6 +70,7 @@
           <a class="nav-link" href="{% url 'accounts:profile' %}">Profile</a>
           {% if user.is_admin_role %}
             <a class="nav-link" href="{% url 'accounts:approvals' %}">Approvals{% if pending_approvals %} <span class="nav-badge">{{ pending_approvals }}</span>{% endif %}</a>
+            <a class="nav-link" href="{% url 'accounts:manage_users' %}">Users</a>
             <a class="nav-link" href="{% url 'donations:partnership_report' %}">Reports</a>
           {% endif %}
           <span class="text-muted small">{{ user.get_role_display }} · {{ user.username }}</span>
@@ -99,6 +100,12 @@
     {% endif %}
     {% block content %}{% endblock %}
   </main>
+  <footer class="app-footer">
+    <div class="container d-flex flex-wrap justify-content-between gap-2">
+      <span>FoodBridge · a community food-rescue platform</span>
+      <span><a href="{% url 'about' %}">About</a> · <a href="{% url 'privacy' %}">Privacy</a> · <a href="{% url 'terms' %}">Terms</a></span>
+    </div>
+  </footer>
   {% if user.is_authenticated %}
   <script>
     (function () {
