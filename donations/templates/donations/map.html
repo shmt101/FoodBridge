@@ -31,12 +31,16 @@
   var areas = JSON.parse(document.getElementById('map-areas').textContent);
   var me = JSON.parse(document.getElementById('map-me').textContent);
   var map = L.map('fbmap', { scrollWheelZoom: false }).setView([-33.87, 151.05], 9);
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
+  var tiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19, subdomains: 'abcd',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  }).addTo(map);
+  tiles.on('tileerror', function () { document.getElementById('mapfallback').classList.remove('d-none'); });
   var pts = [];
   areas.forEach(function (a) {
     var r = 9 + Math.min(a.count, 8) * 3;
-    var m = L.circleMarker([a.lat, a.lng], { radius: r, color: '#073b2a', weight: 2, fillColor: '#22c55e', fillOpacity: .75 }).addTo(map);
+    var m = L.
+	circleMarker([a.lat, a.lng], { radius: r, color: '#073b2a', weight: 2, fillColor: '#22c55e', fillOpacity: .75 }).addTo(map);
     var rows = a.items.map(function (i) { return '<li>' + esc(i.food) + ' &middot; ' + i.kg + ' kg &middot; ' + esc(i.status) + '</li>'; }).join('');
     m.bindPopup('<strong>' + esc(a.label) + '</strong><br>' + a.count + ' active listing(s), ' + a.kg + ' kg<ul class="ps-3 mb-0 mt-1">' + rows + '</ul>');
     pts.push([a.lat, a.lng]);
