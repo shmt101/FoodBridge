@@ -1,11 +1,30 @@
 {% extends "base_app.html" %}
 {% block title %}Your profile · FoodBridge{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-6">
+<div class="row justify-content-center g-4">
+  <div class="col-lg-7">
     <div class="app-card">
-      <h2 class="mb-1">Your profile</h2>
-      <p class="text-muted small mb-3">Role: <strong>{{ user.get_role_display }}</strong> (contact an admin to change this)</p>
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+        <div>
+          <h2 class="section-title mb-1">Your profile</h2>
+          <p class="text-muted small mb-0">Role: <strong>{{ user.get_role_display }}</strong> (contact an admin to change this)</p>
+        </div>
+        {% if user.is_approved %}<span class="chip dist-near"><i class="bi bi-patch-check-fill"></i> Approved</span>
+        {% elif user.is_rejected %}<span class="chip dist-far"><i class="bi bi-x-circle-fill"></i> Not approved</span>
+        {% else %}<span class="chip dist-mid"><i class="bi bi-hourglass-split"></i> Awaiting approval</span>{% endif %}
+      </div>
+
+      {% if user.is_driver %}
+        {% if user.profile_complete %}
+          <div class="banner banner-ok"><span class="banner-icon"><i class="bi bi-check2-circle"></i></span>
+            <div><h6>Ready to pick up orders</h6><p>Jobs will be ranked by distance from {{ user.area_display }}.</p></div></div>
+        {% else %}
+          <div class="banner banner-warn"><span class="banner-icon"><i class="bi bi-geo-alt"></i></span>
+            <div><h6>Add your area and street address to start picking up orders</h6>
+              <p>Until both are saved you can browse jobs but you can't accept any. We use your area to show you the nearest pickups first.</p></div></div>
+        {% endif %}
+      {% endif %}
+
       <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         <div class="row g-2">
@@ -14,10 +33,13 @@
           <div class="col-md-6 mb-3"><label class="form-label">Email</label>{{ form.email }}</div>
           <div class="col-md-6 mb-3"><label class="form-label">Phone</label>{{ form.phone }}</div>
           <div class="col-12 mb-3"><label class="form-label">Organisation name</label>{{ form.organisation_name }}</div>
-          <div class="col-12 mb-3"><label class="form-label">Address</label>{{ form.address }}</div>
+          <div class="col-md-5 mb-3"><label class="form-label">Your area {% if user.is_driver %}<span class="text-danger">*</span>{% endif %}</label>{{ form.area }}
+            <div class="tbl-note mt-1">Used for nearby matching and distances.</div></div>
+          <div class="col-md-7 mb-3"><label class="form-label">Street address {% if user.is_driver %}<span class="text-danger">*</span>{% endif %}</label>{{ form.address }}</div>
           <div class="col-12 mb-3"><label class="form-label">Bio</label>{{ form.bio }}</div>
           <div class="col-12 mb-3"><label class="form-label">Avatar</label>{{ form.avatar }}</div>
         </div>
+        {% if form.errors %}<div class="alert alert-danger py-2 small">{% for field in form %}{% for e in field.errors %}<div>{{ field.label }}: {{ e }}</div>{% endfor %}{% endfor %}</div>{% endif %}
         <button class="btn btn-forest" type="submit">Save changes</button>
       </form>
     </div>

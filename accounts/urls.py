@@ -10,4 +10,6 @@ urlpatterns = [
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("dashboard/", views.dashboard, name="dashboard"),
     path("profile/", views.profile, name="profile"),
+    path("pending/", views.pending, name="pending"),
+    path("approvals/", views.approvals_queue, name="approvals"),
 ]

@@ -34,6 +34,13 @@ class Notification(models.Model):
         DELIVERED = "delivered", "Delivered"
         CANCELLED = "cancelled", "Cancelled"
         UPDATE = "update", "Status update"
+        OFFER = "offer", "Offer"
+        OFFER_LAPSED = "offer_lapsed", "Offer lapsed"
+        RELEASED = "released", "Released"
+        EXPIRING = "expiring", "Expiring soon"
+        EXPIRED = "expired", "Expired"
+        OPENED = "opened", "Open to all"
+        APPROVAL = "approval", "Account approval"
 
     ICONS = {
         "new_donation": "bi-basket2",
@@ -43,6 +50,13 @@ class Notification(models.Model):
         "delivered": "bi-check-circle",
         "cancelled": "bi-x-circle",
         "update": "bi-info-circle",
+        "offer": "bi-stopwatch",
+        "offer_lapsed": "bi-hourglass-bottom",
+        "released": "bi-arrow-counterclockwise",
+        "expiring": "bi-alarm",
+        "expired": "bi-calendar-x",
+        "opened": "bi-broadcast",
+        "approval": "bi-person-check",
     }
 
     user = models.ForeignKey(
@@ -53,6 +67,10 @@ class Notification(models.Model):
     donation = models.ForeignKey(
         "donations.Donation", on_delete=models.SET_NULL, null=True, blank=True,
         related_name="notifications",
+    )
+    link = models.CharField(
+        max_length=200, blank=True,
+        help_text="Internal path to open when the notification is clicked (defaults to the dashboard).",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     read_at = models.DateTimeField(null=True, blank=True)

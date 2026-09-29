@@ -1,34 +1,63 @@
 {% extends "base_app.html" %}
 {% block title %}Sign up · FoodBridge{% endblock %}
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-6">
-    <div class="app-card">
-      <h2 class="mb-1">Create your account</h2>
-      <p class="text-muted small mb-3">Choose your role — this drives what your dashboard looks like (RBAC).</p>
-      <form method="post" enctype="multipart/form-data">
+<div class="auth-wrap">
+  <div class="auth-shell">
+    {% include "accounts/_auth_aside.html" with headline="Join the network turning surplus food into meals." subline="Pick your role, tell us where you are, and an admin will approve your account." %}
+    <div class="auth-form">
+      <h1>Create your account</h1>
+      <p class="sub">Choose how you'll use FoodBridge.</p>
+      <form method="post" novalidate>
         {% csrf_token %}
-        <div class="mb-3">
-          <label class="form-label d-block">I am a…</label>
+        <div class="role-grid mb-2">
           {% for radio in form.role %}
-            <div class="form-check form-check-inline">{{ radio.tag }} {{ radio.choice_label }}</div>
+            <label class="role-card" for="{{ radio.id_for_label }}">
+              {{ radio.tag }}
+              <span class="ri"><i class="bi {% if radio.choice_value == 'DONOR' %}bi-shop{% elif radio.choice_value == 'RECIPIENT' %}bi-house-heart{% else %}bi-truck{% endif %}"></i></span>
+              <strong>{{ radio.choice_label }}</strong>
+              <small>{% if radio.choice_value == 'DONOR' %}I have surplus food{% elif radio.choice_value == 'RECIPIENT' %}I feed people in need{% else %}I can transport food{% endif %}</small>
+            </label>
           {% endfor %}
         </div>
-        <div class="row g-2">
-          <div class="col-md-6 mb-3"><label class="form-label">Username</label>{{ form.username }}</div>
-          <div class="col-md-6 mb-3"><label class="form-label">Email</label>{{ form.email }}</div>
-          <div class="col-md-6 mb-3"><label class="form-label">First name</label>{{ form.first_name }}</div>
-          <div class="col-md-6 mb-3"><label class="form-label">Last name</label>{{ form.last_name }}</div>
-          <div class="col-md-6 mb-3"><label class="form-label">Password</label>{{ form.password1 }}</div>
-          <div class="col-md-6 mb-3"><label class="form-label">Confirm password</label>{{ form.password2 }}</div>
+        {% for e in form.role.errors %}<div class="text-danger small mb-2">{{ e }}</div>{% endfor %}
+        <div class="role-note" data-driver-note><i class="bi bi-info-circle"></i> Drivers need an <strong>area</strong> and <strong>street address</strong> on their profile before they can pick up orders. You can add them now.</div>
+
+        <div class="row g-2 mt-2">
+          <div class="col-md-6"><label class="form-label small fw-semibold">First name</label>{{ form.first_name }}</div>
+          <div class="col-md-6"><label class="form-label small fw-semibold">Last name</label>{{ form.last_name }}</div>
+          <div class="col-md-6"><label class="form-label small fw-semibold">Username</label>{{ form.username }}</div>
+          <div class="col-md-6"><label class="form-label small fw-semibold">Email</label>{{ form.email }}</div>
+          <div class="col-md-6"><label class="form-label small fw-semibold" data-org-label>Organisation (optional)</label>{{ form.organisation_name }}</div>
+          <div class="col-md-6"><label class="form-label small fw-semibold">Phone</label>{{ form.phone }}</div>
+          <div class="col-md-6"><label class="form-label small fw-semibold">Your area</label>{{ form.area }}</div>
+          <div class="col-md-6"><label class="form-label small fw-semibold">Street address</label>{{ form.address }}</div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold" for="{{ form.password1.id_for_label }}">Password</label>
+            <div class="field-icon has-toggle" style="--x:0">{{ form.password1 }}
+              <button type="button" class="pw-toggle" data-toggle-password="{{ form.password1.id_for_label }}" aria-label="Show or hide password"><i class="bi bi-eye"></i></button></div>
+            <div class="strength"><i></i></div><div class="strength-label"></div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small fw-semibold" for="{{ form.password2.id_for_label }}">Confirm password</label>
+            <div class="field-icon has-toggle">{{ form.password2 }}
+              <button type="button" class="pw-toggle" data-toggle-password="{{ form.password2.id_for_label }}" aria-label="Show or hide password"><i class="bi bi-eye"></i></button></div>
+          </div>
         </div>
         {% if form.errors %}
-          <div class="alert alert-danger">{{ form.errors }}</div>
+          <div class="alert alert-danger mt-3 mb-0 py-2 small">
+            <strong>Please fix the following:</strong>
+            <ul class="errorlist-clean mt-1">
+              {% for field in form %}{% for e in field.errors %}<li>{{ field.label }}: {{ e }}</li>{% endfor %}{% endfor %}
+              {% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}
+            </ul>
+          </div>
         {% endif %}
-        <button class="btn btn-forest w-100" type="submit">Create account</button>
+        <div class="approval-note"><i class="bi bi-person-check-fill"></i><span>An admin approves every new Donor, Recipient and Driver account. You'll get a notification as soon as it's done.</span></div>
+        <button class="btn btn-forest w-100 py-2 fw-bold" type="submit">Create account <i class="bi bi-arrow-right"></i></button>
       </form>
-      <p class="mt-3 mb-0 small">Already have an account? <a href="{% url 'accounts:login' %}">Log in</a></p>
+      <p class="auth-foot mb-0">Already have an account? <a href="{% url 'accounts:login' %}">Log in</a></p>
     </div>
   </div>
 </div>
+{% include "partials/video_dialog.html" %}
 {% endblock %}

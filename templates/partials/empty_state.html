@@ -1,0 +1,6 @@
+<div class="empty-state">
+  <div class="empty-icon"><i class="bi {{ icon|default:'bi-inbox' }}"></i></div>
+  <h6>{{ title }}</h6>
+  <p>{{ text }}</p>
+  {% if cta_url %}<a class="btn btn-sm btn-forest" href="{{ cta_url }}">{{ cta_label }}</a>{% endif %}
+</div>

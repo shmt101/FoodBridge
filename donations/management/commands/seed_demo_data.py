@@ -1,11 +1,13 @@
 import random
+from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from donations.models import Donation
+from accounts.areas import AREAS
+from donations.models import Donation, DonationEvent
 from inbox.services import notifications_suppressed
 
 FOOD_ITEMS = [
@@ -17,6 +19,10 @@ ORG_NAMES_DONOR = ["Corner Bakery", "Fresh Grocer Co.", "CityDeli", "Community P
                    "Harborview Cafe", "Green Leaf Grocers", "Sunrise Bakehouse", "Metro Supermarket"]
 ORG_NAMES_RECIPIENT = ["Westside Community Pantry", "Hope Kitchen", "Riverside Shelter",
                        "St. Mary's Food Relief", "Northside Youth Centre"]
+STREETS = ["George St", "Church St", "Victoria Rd", "Station St", "Park Ave", "High St", "Marion St", "Pacific Hwy"]
+# Demo users cluster around Sydney so distances/matching look realistic.
+SYDNEY_AREAS = [k for k, a in AREAS.items() if a.state == "NSW"]
+CANCEL_REASONS = ["unavailable", "safety", "mistake", "no_pickup", "elsewhere", "other"]
 
 
 class Command(BaseCommand):
@@ -31,17 +37,19 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         try:
             from faker import Faker
-            fake = Faker()
+            fake = Faker("en_AU")
         except ImportError:
             self.stderr.write("Install faker first: pip install faker --break-system-packages")
             return
 
         User = get_user_model()
+        now = timezone.now()
 
         def make_users(role, count, org_pool):
             users = []
             for i in range(count):
                 username = f"{role.lower()}{i+1}"
+                area = random.choice(SYDNEY_AREAS)
                 user, created = User.objects.get_or_create(
                     username=username,
                     defaults=dict(
@@ -50,8 +58,11 @@ class Command(BaseCommand):
                         last_name=fake.last_name(),
                         role=role,
                         phone=fake.phone_number()[:30],
-                        address=fake.address().replace("\n", ", "),
+                        area=area,
+                        address=f"{random.randint(1, 240)} {random.choice(STREETS)}, {AREAS[area].label}",
                         organisation_name=random.choice(org_pool) if org_pool else "",
+                        approval_status=User.Approval.APPROVED,
+                        approved_at=now,
                     ),
                 )
                 if created:
@@ -64,44 +75,86 @@ class Command(BaseCommand):
         recipients = make_users(User.Role.RECIPIENT, options["recipients"], ORG_NAMES_RECIPIENT)
         drivers = make_users(User.Role.DRIVER, options["drivers"], [])
 
+        # Showcase accounts: a driver who can't pick up yet, and sign-ups waiting for approval.
+        User.objects.get_or_create(username="driver_noaddress", defaults=dict(
+            email="noaddress@example.com", first_name="Nadia", last_name="Newdriver", role=User.Role.DRIVER,
+            approval_status=User.Approval.APPROVED, approved_at=now,
+        ))[0].set_password("foodbridge123")
+        for name, role, org in (("waiting_donor", User.Role.DONOR, "Bondi Beach Bakehouse"),
+                                ("waiting_pantry", User.Role.RECIPIENT, "Newtown Neighbourhood Pantry"),
+                                ("waiting_driver", User.Role.DRIVER, "")):
+            user, created = User.objects.get_or_create(username=name, defaults=dict(
+                email=f"{name}@example.com", first_name=name.split("_")[1].title(), last_name="Applicant",
+                role=role, organisation_name=org, area=random.choice(SYDNEY_AREAS),
+                approval_status=User.Approval.PENDING,
+            ))
+            if created:
+                user.set_password("foodbridge123")
+                user.save()
+        for user in User.objects.filter(username="driver_noaddress"):
+            user.set_password("foodbridge123")
+            user.save()
+
         if not User.objects.filter(role=User.Role.ADMIN).exists():
-            admin = User.objects.create_user(
+            User.objects.create_user(
                 username="auditor", email="auditor@example.com",
                 password="foodbridge123", role=User.Role.ADMIN, is_staff=True,
             )
-            self.stdout.write(f"Created auditor/admin login: auditor / foodbridge123")
+            self.stdout.write("Created auditor/admin login: auditor / foodbridge123")
 
-        statuses = list(Donation.Status.choices)
+        statuses = [s[0] for s in Donation.Status.choices]
+        # Pending, Assigned, In transit, Delivered, Cancelled, Expired
+        weights = [30, 15, 10, 30, 6, 9]
         created_count = 0
-        # Demo data shouldn't flood every driver/recipient with notifications.
         with notifications_suppressed():
             for _ in range(options["donations"]):
-                status = random.choices(
-                    [s[0] for s in statuses],
-                    weights=[35, 20, 15, 25, 5],  # Pending, Assigned, In transit, Delivered, Cancelled
-                )[0]
+                status = random.choices(statuses, weights=weights)[0]
                 donor = random.choice(donors)
-                recipient = random.choice(recipients) if status != Donation.Status.PENDING else None
-                driver = random.choice(drivers) if status in (
-                    Donation.Status.IN_TRANSIT, Donation.Status.DELIVERED
-                ) else None
+                recipient = random.choice(recipients) if status in ("Assigned", "In transit", "Delivered") else None
+                driver = random.choice(drivers) if status in ("In transit", "Delivered") else None
+                listed = now - timedelta(hours=random.randint(2, 24 * 20))
+                if status in ("Pending", "Assigned"):
+                    expires = now + timedelta(hours=random.randint(1, 36))
+                elif status == "Expired":
+                    expires = now - timedelta(hours=random.randint(1, 48))
+                else:
+                    expires = listed + timedelta(hours=random.randint(24, 72))
+                area = donor.area if random.random() < 0.7 else random.choice(SYDNEY_AREAS)
 
-                donation = Donation.objects.create(
-                    donor=donor,
-                    recipient=recipient,
-                    driver=driver,
+                d = Donation.objects.create(
+                    donor=donor, recipient=recipient, driver=driver,
                     food_item=random.choice(FOOD_ITEMS),
                     quantity_kg=Decimal(random.randrange(2, 30)),
-                    pickup_address=fake.address().replace("\n", ", "),
-                    notes=fake.sentence() if random.random() > 0.5 else "",
-                    status=status,
+                    pickup_area=area, pickup_address=f"{random.randint(1, 240)} {random.choice(STREETS)}",
+                    notes=fake.sentence() if random.random() > 0.5 else "", status=status, expires_at=expires,
                 )
-                if status == Donation.Status.DELIVERED:
-                    donation.delivered_at = timezone.now() - timezone.timedelta(days=random.randint(0, 20))
-                    donation.save(update_fields=["delivered_at"])
+                claimed = listed + timedelta(minutes=random.randint(10, 300))
+                picked = claimed + timedelta(minutes=random.randint(15, 240))
+                updates = {"date_listed": listed}
+                events = [(DonationEvent.Kind.LISTED, donor, "Listed", listed)]
+                if recipient:
+                    updates["claimed_at"] = claimed
+                    events.append((DonationEvent.Kind.CLAIMED, recipient, f"Claimed by {recipient.display_name}", claimed))
+                if driver:
+                    updates["picked_up_at"] = picked
+                    events.append((DonationEvent.Kind.PICKED_UP, driver, f"Accepted by {driver.display_name}", picked))
+                if status == "Delivered":
+                    delivered = picked + timedelta(minutes=random.randint(20, 120))
+                    updates["delivered_at"] = delivered
+                    events.append((DonationEvent.Kind.DELIVERED, driver, "Delivered", delivered))
+                if status == "Cancelled":
+                    reason = random.choice(CANCEL_REASONS)
+                    updates.update(cancel_reason=reason, cancelled_by=donor, cancelled_at=listed + timedelta(hours=1))
+                    events.append((DonationEvent.Kind.CANCELLED, donor, dict(Donation.CancelReason.choices)[reason], listed + timedelta(hours=1)))
+                if status == "Expired":
+                    events.append((DonationEvent.Kind.EXPIRED, None, "Reached its expiry time before delivery", expires))
+                Donation.objects.filter(pk=d.pk).update(**updates)
+                for kind, actor, note, when in events:
+                    ev = DonationEvent.objects.create(donation=d, actor=actor, kind=kind, note=note)
+                    DonationEvent.objects.filter(pk=ev.pk).update(created_at=when)
                 created_count += 1
 
         self.stdout.write(self.style.SUCCESS(
-            f"Seeded {len(donors)} donors, {len(recipients)} recipients, "
-            f"{len(drivers)} drivers, and {created_count} donations."
+            f"Seeded {len(donors)} donors, {len(recipients)} recipients, {len(drivers)} drivers, "
+            f"3 accounts awaiting approval, 1 driver without an address, and {created_count} donations."
         ))

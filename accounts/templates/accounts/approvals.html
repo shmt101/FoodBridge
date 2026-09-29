@@ -1,0 +1,58 @@
+{% extends "base_app.html" %}
+{% block title %}Account approvals · FoodBridge{% endblock %}
+{% block content %}
+<div class="dash-top mb-3">
+  <div>
+    <h2 class="section-title mb-1">Account approvals</h2>
+    <p class="text-muted mb-0">Every new Donor, Recipient and Driver needs your approval before they can use the portal.</p>
+  </div>
+  <a class="btn btn-outline-forest" href="{% url 'donations:admin_dashboard' %}"><i class="bi bi-arrow-left"></i> Admin dashboard</a>
+</div>
+
+<ul class="nav nav-pills mb-3 gap-2">
+  <li class="nav-item"><a class="btn btn-sm {% if tab == 'pending' %}btn-forest{% else %}btn-outline-forest{% endif %}" href="?tab=pending">Pending <span class="chip ms-1">{{ counts.pending }}</span></a></li>
+  <li class="nav-item"><a class="btn btn-sm {% if tab == 'approved' %}btn-forest{% else %}btn-outline-forest{% endif %}" href="?tab=approved">Approved <span class="chip ms-1">{{ counts.approved }}</span></a></li>
+  <li class="nav-item"><a class="btn btn-sm {% if tab == 'rejected' %}btn-forest{% else %}btn-outline-forest{% endif %}" href="?tab=rejected">Rejected <span class="chip ms-1">{{ counts.rejected }}</span></a></li>
+</ul>
+
+<div class="app-card">
+  <div class="table-responsive">
+  <table class="table align-middle mb-0">
+    <thead><tr><th>Person</th><th>Role</th><th>Organisation</th><th>Area / address</th><th>Signed up</th><th></th></tr></thead>
+    <tbody>
+    {% for u in users %}
+      <tr>
+        <td><strong>{{ u.get_full_name|default:u.username }}</strong><br><span class="tbl-note">@{{ u.username }} · {{ u.email }}{% if u.phone %} · {{ u.phone }}{% endif %}</span></td>
+        <td><span class="chip">{{ u.get_role_display }}</span></td>
+        <td>{{ u.organisation_name|default:"—" }}</td>
+        <td>{{ u.area_display|default:"—" }}<br><span class="tbl-note">{{ u.address|default:"no address" }}</span></td>
+        <td class="text-nowrap">{{ u.date_joined|date:"d M Y, H:i" }}{% if tab != 'pending' and u.rejection_reason %}<br><span class="tbl-note">{{ u.rejection_reason }}</span>{% endif %}</td>
+        <td style="min-width:230px">
+          {% if tab != 'approved' %}
+          <form method="post" class="d-inline">{% csrf_token %}
+            <input type="hidden" name="user_id" value="{{ u.pk }}"><input type="hidden" name="tab" value="{{ tab }}">
+            <button name="action" value="approve" class="btn btn-sm btn-forest"><i class="bi bi-check-lg"></i> Approve</button>
+          </form>
+          {% endif %}
+          {% if tab != 'rejected' %}
+          <details class="d-inline-block ms-1">
+            <summary class="btn btn-sm btn-outline-secondary" style="list-style:none">Reject…</summary>
+            <form method="post" class="mt-2 p-2 border rounded bg-light" style="min-width:230px">{% csrf_token %}
+              <input type="hidden" name="user_id" value="{{ u.pk }}"><input type="hidden" name="tab" value="{{ tab }}">
+              <input class="form-control form-control-sm mb-2" name="reason" placeholder="Reason (shown to the applicant)" maxlength="255">
+              <button name="action" value="reject" class="btn btn-sm btn-danger w-100">Confirm reject</button>
+            </form>
+          </details>
+          {% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="6">
+        {% include "partials/empty_state.html" with icon="bi-person-check" title="Nobody here" text="No accounts in this list right now. New sign-ups will appear under Pending and you'll get a notification." %}
+      </td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% endblock %}

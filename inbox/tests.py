@@ -13,6 +13,7 @@ User = get_user_model()
 
 
 def make_user(username, role, **extra):
+    extra.setdefault("approval_status", User.Approval.APPROVED)
     return User.objects.create_user(
         username=username, password="pass12345", role=role,
         first_name=extra.pop("first_name", username.title()), **extra,
@@ -25,14 +26,15 @@ class NotificationFlowTests(TestCase):
     def setUp(self):
         self.donor_a = make_user("donora", User.Role.DONOR, organisation_name="Corner Bakery")
         self.donor_b = make_user("donorb", User.Role.DONOR)
-        self.pantry = make_user("pantry1", User.Role.RECIPIENT, organisation_name="Hope Kitchen")
-        self.driver_a = make_user("drivera", User.Role.DRIVER, first_name="Dana")
+        self.pantry = make_user("pantry1", User.Role.RECIPIENT, organisation_name="Hope Kitchen", area="nsw-auburn")
+        self.driver_a = make_user("drivera", User.Role.DRIVER, first_name="Dana",
+                                  area="nsw-homebush", address="1 Test St")
         self.driver_b = make_user("driverb", User.Role.DRIVER)
 
     def texts(self, user):
         return list(Notification.objects.filter(user=user).values_list("text", flat=True))
 
-    def test_new_listing_notifies_drivers_and_recipients_but_not_donors(self):
+    def test_new_listing_alerts_drivers_and_offers_recipients_but_not_donors(self):
         Donation.objects.create(donor=self.donor_a, food_item="Bread", quantity_kg=Decimal("12.00"))
         for u in (self.driver_a, self.driver_b, self.pantry):
             self.assertEqual(Notification.objects.filter(user=u).count(), 1)
@@ -44,12 +46,12 @@ class NotificationFlowTests(TestCase):
         d = Donation.objects.create(donor=self.donor_a, food_item="Bread", quantity_kg=5)
         Notification.objects.all().delete()
 
-        # Pantry claims -> donor told, drivers told it's ready for pickup, pantry (actor) not told
+        # Pantry claims -> donor told; pantry (actor) not told. (Drivers are now told through
+        # targeted pickup offers from donations.workflow, not a broadcast on every status change.)
         d.recipient, d.status = self.pantry, Donation.Status.ASSIGNED
         d.save()
         self.assertIn("Hope Kitchen has claimed", self.texts(self.donor_a)[0])
-        self.assertEqual(Notification.objects.filter(user=self.driver_a, kind="ready").count(), 1)
-        self.assertEqual(Notification.objects.filter(user=self.driver_b, kind="ready").count(), 1)
+        self.assertEqual(Notification.objects.filter(kind="ready").count(), 0)
         self.assertEqual(Notification.objects.filter(user=self.pantry).count(), 0)
         self.assertEqual(Notification.objects.filter(user=self.donor_b).count(), 0)
 
@@ -96,8 +98,12 @@ class NotificationFlowTests(TestCase):
 
     def test_dashboard_flow_end_to_end_via_views(self):
         self.client.login(username="donora", password="pass12345")
+        from django.utils import timezone
+        from datetime import timedelta
         self.client.post(reverse("donations:donor_dashboard"), {
             "food_item": "Soup", "quantity_kg": "8", "pickup_address": "1 Main St", "notes": "",
+            "pickup_area": "nsw-parramatta",
+            "expires_at": (timezone.localtime() + timedelta(hours=6)).strftime("%Y-%m-%dT%H:%M"),
         })
         donation = Donation.objects.get(food_item="Soup")
         self.client.logout()
@@ -119,7 +125,8 @@ class NotificationFlowTests(TestCase):
         self.assertEqual(self.client.get(reverse("inbox:notification_open", args=[n.pk])).status_code, 404)
         self.client.login(username="drivera", password="pass12345")
         resp = self.client.get(reverse("inbox:notification_open", args=[n.pk]))
-        self.assertRedirects(resp, reverse("accounts:dashboard"), fetch_redirect_response=False)
+        # notifications now deep-link to the page where you act on them
+        self.assertRedirects(resp, reverse("donations:driver_dashboard"), fetch_redirect_response=False)
         n.refresh_from_db()
         self.assertIsNotNone(n.read_at)
 
@@ -127,7 +134,7 @@ class NotificationFlowTests(TestCase):
         Donation.objects.create(donor=self.donor_a, food_item="Bread", quantity_kg=5)
         self.client.login(username="drivera", password="pass12345")
         page = self.client.get(reverse("inbox:home"))
-        self.assertContains(page, "New donation listed")
+        self.assertContains(page, "New listing near you")
         self.assertEqual(page.context["unread_total"], 1)
         self.client.post(reverse("inbox:mark_all_read"))
         self.assertEqual(self.client.get(reverse("inbox:home")).context["unread_total"], 0)

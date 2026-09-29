@@ -21,8 +21,7 @@ def notify_on_donation_save(sender, instance, created, raw=False, **kwargs):
     if raw or services.is_suppressed():
         return
     if created:
-        if instance.status == Donation.Status.PENDING:
-            services.donation_listed(instance)
+        # New listings are handled by donations.workflow.start_matching (offers + alerts).
         return
     previous = getattr(instance, "_previous_status", None)
     if previous and previous != instance.status:

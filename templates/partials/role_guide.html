@@ -1,0 +1,17 @@
+{# Three-step "how this works for you" strip shown at the top of each dashboard. #}
+<div class="guide">
+  {% if role == "donor" %}
+    <div class="guide-step"><span class="n">1</span><div><strong>List your surplus</strong><span>Say what it is, where it is and when it expires.</span></div></div>
+    <div class="guide-step"><span class="n">2</span><div><strong>Nearby pantries are offered it</strong><span>The closest get first refusal for a short time.</span></div></div>
+    <div class="guide-step"><span class="n">3</span><div><strong>A driver collects it</strong><span>You're notified at every step until it's delivered.</span></div></div>
+  {% elif role == "recipient" %}
+    <div class="guide-step"><span class="n">1</span><div><strong>Watch for offers</strong><span>Donations near you are offered to you first.</span></div></div>
+    <div class="guide-step"><span class="n">2</span><div><strong>Accept before the timer ends</strong><span>If you don't, it moves on to the next pantry.</span></div></div>
+    <div class="guide-step"><span class="n">3</span><div><strong>A driver brings it</strong><span>Message the donor or driver if plans change.</span></div></div>
+  {% elif role == "driver" %}
+    <div class="guide-step"><span class="n">1</span><div><strong>Complete your profile</strong><span>Your area and address are needed before you can pick up orders.</span></div></div>
+    <div class="guide-step"><span class="n">2</span><div><strong>Take the nearest job</strong><span>Jobs are ranked by distance from you.</span></div></div>
+    <div class="guide-step"><span class="n">3</span><div><strong>Deliver &amp; mark done</strong><span>Can't make it? Hand it back with a reason.</span></div></div>
+  {% endif %}
+</div>
+<a class="guide-link" href="{% url 'about' %}#watch"><i class="bi bi-play-circle-fill"></i> Watch how food rescue works in Australia</a>

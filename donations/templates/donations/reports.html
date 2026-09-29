@@ -1,0 +1,132 @@
+{% extends "base_app.html" %}
+{% load donation_extras %}
+{% block title %}{% if mine %}My activity{% else %}Partnership Activity Report{% endif %} · FoodBridge{% endblock %}
+{% block content %}
+<div class="dash-top mb-3">
+  <div>
+    <span class="chip dist-near mb-2"><i class="bi bi-diagram-3"></i> {% if mine %}Your activity{% else %}Partnership Activity{% endif %}</span>
+    <h2 class="section-title mb-1">{% if mine %}My activity report{% else %}Partnership Activity Report{% endif %}</h2>
+    <p class="text-muted mb-0">{% if mine %}Everything you've contributed through FoodBridge.{% else %}How every food partner, pantry and driver is contributing, and which partnerships are delivering.{% endif %}
+      <strong>{{ period_label }}</strong></p>
+  </div>
+  <div class="dash-actions">
+    <a class="btn btn-sm btn-outline-forest" href="{% if user.is_admin_role %}{% url 'donations:admin_dashboard' %}{% else %}{% url 'accounts:dashboard' %}{% endif %}"><i class="bi bi-arrow-left"></i> Dashboard</a>
+  </div>
+</div>
+
+<form method="get" class="filter-bar">
+  <div class="row g-2 align-items-end">
+    <div class="col-lg-5">
+      <label class="form-label small fw-semibold mb-1">Period</label>
+      <div class="radius-pills">
+        <a href="?range=7" class="{% if range == '7' %}active{% endif %}">Last 7 days</a>
+        <a href="?range=30" class="{% if range == '30' %}active{% endif %}">30 days</a>
+        <a href="?range=90" class="{% if range == '90' %}active{% endif %}">90 days</a>
+        <a href="?range=all" class="{% if range == 'all' %}active{% endif %}">All time</a>
+      </div>
+    </div>
+    <div class="col-6 col-lg-2"><label class="form-label small fw-semibold mb-1">From</label><input type="date" name="from" value="{{ from }}" class="form-control form-control-sm"></div>
+    <div class="col-6 col-lg-2"><label class="form-label small fw-semibold mb-1">To</label><input type="date" name="to" value="{{ to }}" class="form-control form-control-sm"></div>
+    <div class="col-lg-3"><button class="btn btn-forest btn-sm w-100" type="submit">Apply custom dates</button></div>
+  </div>
+</form>
+
+{% if summary %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ summary.kg_delivered }} kg</div><div class="stat-label">Food delivered</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">≈ {{ summary.meals }}</div><div class="stat-label">Meals (est. 2 per kg)</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ summary.co2e }} kg</div><div class="stat-label">CO₂-e avoided (est.)</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{% if summary.fulfilment_rate is not None %}{{ summary.fulfilment_rate }}%{% else %}—{% endif %}</div><div class="stat-label">Fulfilment rate</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ summary.listings }}</div><div class="stat-label">Listings ({{ summary.kg_listed }} kg)</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ summary.delivered }} / {{ summary.cancelled }} / {{ summary.expired }}</div><div class="stat-label">Delivered / cancelled / expired</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{% if summary.avg_hours_to_claim is not None %}{{ summary.avg_hours_to_claim }} h{% else %}—{% endif %}</div><div class="stat-label">Avg time to be claimed</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{% if summary.offer_accept_rate is not None %}{{ summary.offer_accept_rate }}%{% else %}—{% endif %}</div><div class="stat-label">Offers accepted ({{ summary.offers_total }} sent)</div></div></div>
+</div>
+<div class="row g-4 mb-4">
+  <div class="col-lg-7"><div class="app-card h-100">
+    <h5 class="section-title mb-3">Kg delivered per week</h5>
+    {% for w in summary.weekly %}
+      <div class="bar-row"><span>Wk of {{ w.label }}</span><div class="bar-track"><div class="bar-fill" style="width:{{ w.pct }}%"></div></div><span class="bar-n">{{ w.kg|floatformat:0 }}</span></div>
+    {% empty %}{% include "partials/empty_state.html" with icon="bi-graph-up" title="No deliveries in this period" text="Weekly delivery volume appears here once food has been delivered." %}{% endfor %}
+  </div></div>
+  <div class="col-lg-5"><div class="app-card h-100">
+    <h5 class="section-title mb-3">Why listings were cancelled</h5>
+    {% for r in summary.cancel_reasons %}
+      <div class="bar-row" style="grid-template-columns:150px 1fr 30px"><span>{{ r.label }}</span><div class="bar-track"><div class="bar-fill warm" style="width:{{ r.pct }}%"></div></div><span class="bar-n">{{ r.n }}</span></div>
+    {% empty %}<p class="text-muted small mb-0">No cancellations with a recorded reason in this period.</p>{% endfor %}
+  </div></div>
+</div>
+{% endif %}
+
+{% if donors is not None %}
+<div class="app-card mb-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h5 class="section-title mb-0"><i class="bi bi-shop text-success"></i> Food donor partners</h5>
+    <a class="btn btn-sm btn-outline-forest" href="?export=donors&range={{ range }}&from={{ from }}&to={{ to }}"><i class="bi bi-download"></i> CSV</a>
+  </div>
+  <div class="table-responsive"><table class="table align-middle mb-0">
+    <thead><tr><th>Donor</th><th>Area</th><th>Listings</th><th>Kg listed</th><th>Delivered</th><th>Kg delivered</th><th>Cancelled</th><th>Expired</th><th>Fulfilment</th><th>Avg claim time</th></tr></thead>
+    <tbody>
+    {% for r in donors %}
+      <tr><td><strong>{{ r.name }}</strong></td><td>{{ r.area|default:"—" }}</td><td>{{ r.listings }}</td><td>{{ r.kg_listed }}</td><td>{{ r.delivered }}</td><td>{{ r.kg_delivered }}</td><td>{{ r.cancelled }}</td><td>{{ r.expired }}</td>
+        <td>{% if r.fulfilment is not None %}{{ r.fulfilment }}%{% else %}—{% endif %}</td><td>{% if r.avg_hours_to_claim is not None %}{{ r.avg_hours_to_claim }} h{% else %}—{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="10">{% include "partials/empty_state.html" with icon="bi-shop" title="No donor activity" text="No donations were listed in this period." %}</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endif %}
+
+{% if recipients is not None %}
+<div class="app-card mb-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h5 class="section-title mb-0"><i class="bi bi-house-heart text-success"></i> Pantries &amp; charity partners</h5>
+    <a class="btn btn-sm btn-outline-forest" href="?export=recipients&range={{ range }}&from={{ from }}&to={{ to }}"><i class="bi bi-download"></i> CSV</a>
+  </div>
+  <div class="table-responsive"><table class="table align-middle mb-0">
+    <thead><tr><th>Pantry</th><th>Area</th><th>Claims</th><th>Delivered</th><th>Kg received</th><th>Est. meals</th><th>Released</th><th>Offers</th><th>Response rate</th></tr></thead>
+    <tbody>
+    {% for r in recipients %}
+      <tr><td><strong>{{ r.name }}</strong></td><td>{{ r.area|default:"—" }}</td><td>{{ r.claims }}</td><td>{{ r.delivered }}</td><td>{{ r.kg_received }}</td><td>{{ r.meals }}</td><td>{{ r.released }}</td>
+        <td>{{ r.offers_accepted }}/{{ r.offers }}{% if r.offers_timed_out %} <span class="tbl-note">({{ r.offers_timed_out }} timed out)</span>{% endif %}</td>
+        <td>{% if r.response_rate is not None %}{{ r.response_rate }}%{% else %}—{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="9">{% include "partials/empty_state.html" with icon="bi-house-heart" title="No pantry activity" text="No claims or offers in this period." %}</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endif %}
+
+{% if drivers is not None %}
+<div class="app-card mb-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h5 class="section-title mb-0"><i class="bi bi-truck text-success"></i> Drivers</h5>
+    <a class="btn btn-sm btn-outline-forest" href="?export=drivers&range={{ range }}&from={{ from }}&to={{ to }}"><i class="bi bi-download"></i> CSV</a>
+  </div>
+  <div class="table-responsive"><table class="table align-middle mb-0">
+    <thead><tr><th>Driver</th><th>Area</th><th>Jobs</th><th>Delivered</th><th>Kg moved</th><th>Approx. km</th><th>Withdrawn</th><th>Avg time to collect</th></tr></thead>
+    <tbody>
+    {% for r in drivers %}
+      <tr><td><strong>{{ r.name }}</strong>{% if not r.profile_ready %} <span class="chip dist-mid">Profile incomplete</span>{% endif %}</td><td>{{ r.area|default:"—" }}</td><td>{{ r.jobs }}</td><td>{{ r.delivered }}</td><td>{{ r.kg_moved }}</td><td>{{ r.km }}</td><td>{{ r.withdrawn }}</td>
+        <td>{% if r.avg_hours_to_collect is not None %}{{ r.avg_hours_to_collect }} h{% else %}—{% endif %}</td></tr>
+    {% empty %}<tr><td colspan="8">{% include "partials/empty_state.html" with icon="bi-truck" title="No driver activity" text="No deliveries were taken in this period." %}</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endif %}
+
+<div class="app-card mb-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
+    <h5 class="section-title mb-0"><i class="bi bi-diagram-3 text-success"></i> Partnerships that are delivering</h5>
+    <a class="btn btn-sm btn-outline-forest" href="?export=partnerships&range={{ range }}&from={{ from }}&to={{ to }}"><i class="bi bi-download"></i> CSV</a>
+  </div>
+  <p class="tbl-note mb-3">Each row is a donor and a pantry that have completed deliveries together.</p>
+  <div class="table-responsive"><table class="table align-middle mb-0">
+    <thead><tr><th>Donor</th><th>Pantry</th><th>Deliveries</th><th>Kg</th><th>Est. meals</th><th>Last delivery</th></tr></thead>
+    <tbody>
+    {% for r in partnerships %}
+      <tr><td><strong>{{ r.donor }}</strong></td><td><i class="bi bi-arrow-right text-success"></i> {{ r.recipient }}</td><td>{{ r.deliveries }}</td><td>{{ r.kg }}</td><td>{{ r.meals }}</td><td>{{ r.last|date:"d M Y" }}</td></tr>
+    {% empty %}<tr><td colspan="6">{% include "partials/empty_state.html" with icon="bi-diagram-3" title="No completed partnerships yet" text="When a donor's food is delivered to a pantry, the partnership shows up here." %}</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</div>
+<p class="attrib">Meals and CO₂-e are estimates. Meals use about 2 per kg (in line with OzHarvest's published totals of 17,500 tonnes and 35 million meals for 2025), and CO₂-e uses 1 kg avoided per kg of food rescued. Both are adjustable in settings.</p>
+{% endblock %}

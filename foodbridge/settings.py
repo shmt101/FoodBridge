@@ -43,6 +43,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'accounts.middleware.ApprovalGateMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -60,6 +61,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'inbox.context_processors.unread_counts',
+                'accounts.context_processors.portal',
             ],
         },
     },
@@ -131,3 +133,13 @@ if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+
+# ---- FoodBridge matching & reporting -----------------------------------------
+# How long a matched pantry / driver has to accept an offer before it moves on.
+OFFER_TIMEOUT_MINUTES = int(os.environ.get("OFFER_TIMEOUT_MINUTES", "30"))
+OFFER_WAVE_SIZE = 2          # nearest N candidates are offered at a time
+OFFER_MAX_WAVES = 3          # after this many waves the listing opens to everyone eligible
+ALERT_RADIUS_KM = 50         # "new listing near you" alerts go to drivers within this distance
+OFFER_PROCESS_THROTTLE_SECONDS = 15   # how often page loads sweep for expired offers/listings
+MEALS_PER_KG = 2             # rule of thumb used for "meals" estimates (OzHarvest's own figures work out ~2)
+CO2E_KG_PER_KG_FOOD = 1.0    # est. kg CO2-equivalent avoided per kg of food rescued

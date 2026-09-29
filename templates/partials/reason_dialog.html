@@ -1,0 +1,18 @@
+{# One shared dialog for cancel / release / withdraw. Buttons open it via data-reason-open. #}
+<dialog id="reasonDialog" class="fb-dialog" aria-labelledby="reasonTitle">
+  <form method="post" action="{{ action_url|default:'' }}">
+    {% csrf_token %}
+    <input type="hidden" name="donation_id" value="">
+    <input type="hidden" name="action" value="">
+    <div class="dlg-head"><h5 class="dlg-title" id="reasonTitle">Are you sure?</h5><button type="button" class="dlg-close" data-close-dialog aria-label="Close">&times;</button></div>
+    <div class="dlg-body">
+      <p class="dlg-intro text-muted small"></p>
+      <div class="mb-3"><label class="form-label fw-semibold">Reason</label>{{ reason_form.reason }}</div>
+      <div class="mb-3"><label class="form-label">{{ reason_form.note.label }}</label>{{ reason_form.note }}</div>
+      <div class="d-flex justify-content-end gap-2">
+        <button type="button" class="btn btn-outline-secondary" data-close-dialog>Keep it</button>
+        <button type="submit" class="btn btn-forest">Confirm</button>
+      </div>
+    </div>
+  </form>
+</dialog>

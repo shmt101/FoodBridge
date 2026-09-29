@@ -17,7 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet">
   <link href="{% static 'assets/vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="{% static 'assets/css/style.css' %}?v=20260923-2" rel="stylesheet">
+  <link href="{% static 'assets/css/style.css' %}?v=20260928-1" rel="stylesheet">
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to main content</a>
@@ -47,6 +47,102 @@
         </div>
       </div>
     </section>
+    <section class="block">
+      <div class="container">
+        <div class="sec-label">How it works</div>
+        <h2 class="sec-h">From surplus to a delivered meal in four steps</h2>
+        <p class="sec-p">Every account is approved by an admin, and every listing is matched by area with timers so food doesn't sit around.</p>
+        <div class="row g-4 mt-2">
+          <div class="col-md-6 col-lg-3"><div class="step-card"><span class="n">1</span><i class="bi bi-basket2 big"></i><h3>List</h3><p>A donor lists surplus food with the pickup area and an expiry time.</p></div></div>
+          <div class="col-md-6 col-lg-3"><div class="step-card"><span class="n">2</span><i class="bi bi-stopwatch big"></i><h3>Offer</h3><p>The nearest pantries get a time-limited offer. If nobody accepts, it moves to the next nearest, then opens to all.</p></div></div>
+          <div class="col-md-6 col-lg-3"><div class="step-card"><span class="n">3</span><i class="bi bi-truck big"></i><h3>Collect</h3><p>Drivers with a saved area and address are offered the pickup, nearest first.</p></div></div>
+          <div class="col-md-6 col-lg-3"><div class="step-card"><span class="n">4</span><i class="bi bi-check2-circle big"></i><h3>Deliver &amp; report</h3><p>Everyone is notified at each step, and partnership reports show what was delivered.</p></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="watch">
+      <div class="container">
+        <div class="sec-label">See it in action</div>
+        <h2 class="sec-h">Food rescue, in the words of the people doing it</h2>
+        <p class="sec-p">FoodBridge is a small platform inspired by Australia's food rescue organisations. These videos come from OzHarvest's own YouTube channel and show the same journey our drivers and pantries take part in.</p>
+        <div class="row g-4 mt-1">
+          {% for v in videos %}
+            <div class="col-md-6">{% include "partials/video_card.html" %}</div>
+          {% endfor %}
+        </div>
+        <h3 class="h5 fw-bold mt-5 mb-3" style="color:#073b2a"><i class="bi bi-headphones text-success"></i> Prefer to listen?</h3>
+        <div class="row g-3">
+          {% for a in audio %}
+            <div class="col-md-6"><a class="audio-card" href="{{ a.url }}" target="_blank" rel="noopener">
+              <span class="ico"><i class="bi bi-headphones"></i></span>
+              <span><strong>{{ a.title }}</strong><small>{{ a.blurb }}</small><em>{{ a.source }} <i class="bi bi-box-arrow-up-right"></i></em></span>
+            </a></div>
+          {% endfor %}
+        </div>
+        <p class="attrib mt-3">Videos load from YouTube only when you press play. Audio opens on the publisher's own site. FoodBridge doesn't host or copy any of this media.</p>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="container">
+        <div class="sec-label">Why it matters</div>
+        <h2 class="sec-h">The scale of the problem, and what rescue can do</h2>
+        <div class="row g-4 mt-1">
+          {% for b in benchmarks %}
+            <div class="col-md-4"><div class="fact-card">
+              <div class="num">{{ b.num }} <span>{{ b.unit }}</span></div>
+              <small>{{ b.label }}</small>
+              <a class="src" href="{{ b.url }}" target="_blank" rel="noopener">Source: {{ b.source }} <i class="bi bi-box-arrow-up-right"></i></a>
+            </div></div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="container">
+        <div class="sec-label">Learning from the best</div>
+        <h2 class="sec-h">How FoodBridge compares with OzHarvest and SecondBite</h2>
+        <p class="sec-p">We borrowed ideas from both organisations and scaled them down for a community-run platform.</p>
+        <div class="table-responsive mt-3">
+          <table class="table compare-table align-top mb-0">
+            <thead><tr><th style="width:16%"></th><th>OzHarvest</th><th>SecondBite</th><th>FoodBridge</th></tr></thead>
+            <tbody>
+              <tr><td>Who donates</td><td>Registered businesses only, not private households.</td><td>Growers, manufacturers and retailers; donated food comes from HACCP and Freshcare certified businesses.</td><td>Donors approved by an admin before they can list.</td></tr>
+              <tr><td>How food moves</td><td>Its own trained drivers collect surplus food and deliver it to local charities.</td><td>Direct Delivery: vehicles collect from food partners, food is sorted and packed, then delivered to charity partners.</td><td>Nearest pantries are offered each listing first; approved drivers with a saved address take the pickup.</td></tr>
+              <tr><td>Food safety</td><td>Drivers are trained to spot hazards and can refuse unsafe items.</td><td>Accepts donated food from HACCP and Freshcare certified businesses.</td><td>Every listing has an expiry time and expires automatically; cancelling for safety is recorded with a reason.</td></tr>
+              <tr><td>Impact reporting</td><td>Publishes yearly totals of tonnes rescued and meals delivered.</td><td>Reports meals distributed to charity partners.</td><td>Partnership Activity Reports: kg, estimated meals, fulfilment and cancellations by partner.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="attrib mt-2">Based on OzHarvest's <a href="https://www.ozharvest.org/food/give-food/" target="_blank" rel="noopener">Give Food</a> page and SecondBite's <a href="https://secondbite.org/about-secondbite/" target="_blank" rel="noopener">About</a> and <a href="https://secondbite.org/donate-food/" target="_blank" rel="noopener">Donate Food</a> pages. FoodBridge is an independent student project and isn't affiliated with either organisation.</p>
+        <div class="row g-3 mt-2">
+          {% for l in partner_links %}
+            <div class="col-md-6"><a class="audio-card" href="{{ l.url }}" target="_blank" rel="noopener"><span class="ico"><i class="bi bi-box-arrow-up-right"></i></span><span><strong>Donate food with {{ l.name }}</strong><small>{{ l.what }}</small></span></a></div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="container">
+        <div class="sec-label">Good to know</div>
+        <h2 class="sec-h">Frequently asked questions</h2>
+        <div class="faq mt-3">
+          <details><summary>Who can use FoodBridge?</summary><p>Food donors, community pantries and volunteer drivers. Every new account is reviewed and approved by an admin before it can use the portal.</p></details>
+          <details><summary>Why do drivers need to add an address?</summary><p>We rank pickups by distance from the driver's area and offer jobs to the nearest drivers first. Until a driver has saved both an area and a street address in their profile, they can't accept any pickup.</p></details>
+          <details><summary>What happens if nobody accepts an offer in time?</summary><p>Offers have a timer. If it runs out, the next nearest pantry or driver is offered the job. After a few rounds the listing opens to every eligible partner so nothing is left waiting.</p></details>
+          <details><summary>What happens when food reaches its expiry time?</summary><p>An unclaimed or uncollected listing closes automatically and the donor is told. Deliveries already on the road aren't cancelled mid-journey.</p></details>
+          <details><summary>Can a listing be cancelled?</summary><p>Yes. Donors can cancel with a reason, pantries can release a claim, and drivers can hand a job back. Everyone involved is told why.</p></details>
+          <details><summary>How are meals and CO₂ savings estimated?</summary><p>We use about 2 meals per kg of food, which matches OzHarvest's published 2025 figures (17,500 tonnes and 35 million meals), and 1 kg of CO₂-e avoided per kg rescued. They're estimates for reporting, not measurements.</p></details>
+        </div>
+        <div class="d-flex flex-wrap gap-3 mt-4">
+          <a class="btn btn-primary-custom" href="{% url 'accounts:signup' %}">Join FoodBridge <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+          <a class="btn btn-secondary-custom" href="{% url 'donations:live' %}">See live donations</a>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer>
@@ -55,5 +151,6 @@
 
   <script src="{% static 'assets/vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'assets/js/main.js' %}"></script>
+  <script src="{% static 'assets/js/portal.js' %}?v=20260928-1"></script>
 </body>
 </html>

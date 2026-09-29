@@ -3,15 +3,35 @@
 {% block title %}Donor dashboard · FoodBridge{% endblock %}
 {% block content %}
 {% include "partials/dashboard_hello.html" with title="Donor dashboard" %}
+<div class="dash-actions mb-3">
+  <a class="btn btn-sm btn-outline-forest" href="{% url 'donations:my_report' %}"><i class="bi bi-bar-chart-line"></i> My activity report</a>
+  <a class="btn btn-sm btn-outline-forest" href="{% url 'donations:live' %}"><i class="bi bi-geo-alt"></i> See what's live near you</a>
+</div>
+{% include "partials/role_guide.html" with role="donor" %}
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md"><div class="stat-card"><div class="stat-value">{{ stats.active }}</div><div class="stat-label">Active listings</div></div></div>
+  <div class="col-6 col-md"><div class="stat-card"><div class="stat-value">{{ stats.kg_delivered }} kg</div><div class="stat-label">Delivered so far</div></div></div>
+  <div class="col-6 col-md"><div class="stat-card"><div class="stat-value">{{ stats.meals }}</div><div class="stat-label">Estimated meals</div></div></div>
+  <div class="col-6 col-md"><div class="stat-card"><div class="stat-value">{{ stats.expiring }}</div><div class="stat-label">Expiring within 3 hrs</div></div></div>
+  <div class="col-6 col-md"><div class="stat-card"><div class="stat-value">{% if stats.fulfilment is not None %}{{ stats.fulfilment }}%{% else %}—{% endif %}</div><div class="stat-label">Fulfilment rate</div></div></div>
+</div>
+
 <div class="row g-4">
   <div class="col-lg-5">
     <div class="app-card">
-      <h5 class="mb-3">List new surplus food</h5>
+      <h5 class="mb-1 section-title">List new surplus food</h5>
+      <p class="tbl-note mb-3">The nearest pantries are offered it first; if they don't respond in time it opens up to more.</p>
       <form method="post">
         {% csrf_token %}
-        <div class="mb-3"><label class="form-label">Food item</label>{{ form.food_item }}</div>
-        <div class="mb-3"><label class="form-label">Quantity (kg)</label>{{ form.quantity_kg }}</div>
+        <input type="hidden" name="action" value="list">
+        <div class="mb-3"><label class="form-label">Food item</label>{{ form.food_item }}{% for e in form.food_item.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+        <div class="mb-3"><label class="form-label">Quantity (kg)</label>{{ form.quantity_kg }}{% for e in form.quantity_kg.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+        <div class="mb-3"><label class="form-label">Pickup area</label>{{ form.pickup_area }}{% for e in form.pickup_area.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
         <div class="mb-3"><label class="form-label">Pickup address</label>{{ form.pickup_address }}</div>
+        <div class="mb-3"><label class="form-label">{{ form.expires_at.label }}</label>{{ form.expires_at }}
+          <div class="tbl-note mt-1">{{ form.expires_at.help_text }}</div>
+          {% for e in form.expires_at.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
         <div class="mb-3"><label class="form-label">Notes</label>{{ form.notes }}</div>
         <button class="btn btn-forest" type="submit">List donation</button>
       </form>
@@ -19,27 +39,43 @@
   </div>
   <div class="col-lg-7">
     <div class="app-card">
-      <h5 class="mb-3">Your donations ({{ donations|length }})</h5>
+      <h5 class="mb-3 section-title">Your donations ({{ donations|length }})</h5>
+      <div class="table-responsive">
       <table class="table align-middle">
-        <thead><tr><th>Food</th><th>Qty</th><th>Status</th><th>Listed</th><th></th></tr></thead>
+        <thead><tr><th>Food</th><th>Status</th><th>Expires</th><th></th></tr></thead>
         <tbody>
         {% for d in donations %}
           <tr>
-            <td>{{ d.food_item }}</td>
-            <td>{{ d.quantity_kg }} kg</td>
-            <td><span class="badge-status {{ d.status|status_class }}">{{ d.status }}</span></td>
-            <td>{{ d.date_listed|date:"d M, H:i" }}</td>
-            <td>
+            <td><strong>{{ d.food_item }}</strong> <span class="text-muted">· {{ d.quantity_kg }} kg</span><br>
+              <span class="chip chip-soft"><i class="bi bi-geo-alt"></i> {{ d.area_display|default:"No area" }}</span></td>
+            <td><span class="badge-status {{ d.status|status_class }}">{{ d.status }}</span>
+              {% if d.status == 'Cancelled' and d.cancel_reason %}<div class="tbl-note mt-1">{{ d.get_cancel_reason_display }}</div>{% endif %}</td>
+            <td class="text-nowrap">
+              {% if d.expires_at %}
+                {% if d.status == 'Pending' or d.status == 'Assigned' %}<span class="countdown" data-expires="{{ d.expires_at|iso }}" data-done="expired">{{ d.expires_at|date:"d M, H:i" }}</span>
+                {% else %}<span class="tbl-note">{{ d.expires_at|date:"d M, H:i" }}</span>{% endif %}
+              {% else %}<span class="tbl-note">No expiry</span>{% endif %}
+            </td>
+            <td class="text-nowrap">
+              <a class="msg-link d-block" href="{% url 'donations:detail' d.pk %}"><i class="bi bi-clock-history"></i> Timeline</a>
               {% if d.driver_id %}<a class="msg-link d-block" href="{% url 'inbox:conversation' d.driver_id %}"><i class="bi bi-chat-dots"></i> Driver</a>{% endif %}
               {% if d.recipient_id %}<a class="msg-link d-block" href="{% url 'inbox:conversation' d.recipient_id %}"><i class="bi bi-chat-dots"></i> Recipient</a>{% endif %}
+              {% if d.status == 'Pending' or d.status == 'Assigned' %}
+                <button type="button" class="btn-link-danger" data-reason-open data-donation="{{ d.pk }}" data-action="cancel"
+                        data-title="Cancel this listing?" data-intro="Everyone involved is notified with your reason." data-confirm="Cancel listing">Cancel listing</button>
+              {% endif %}
             </td>
           </tr>
         {% empty %}
-          <tr><td colspan="5" class="text-muted">No donations listed yet.</td></tr>
+          <tr><td colspan="4">
+            {% include "partials/empty_state.html" with icon="bi-basket2" title="Nothing listed yet" text="List your first surplus donation on the left. Nearby pantries will be offered it straight away." %}
+          </td></tr>
         {% endfor %}
         </tbody>
       </table>
+      </div>
     </div>
   </div>
 </div>
+{% include "partials/reason_dialog.html" with reason_form=cancel_form %}
 {% endblock %}

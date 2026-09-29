@@ -3,33 +3,58 @@
 {% block title %}Admin dashboard · FoodBridge{% endblock %}
 {% block content %}
 {% include "partials/dashboard_hello.html" with title="Admin / Auditor dashboard" %}
-<div class="d-flex justify-content-end align-items-center mb-4 flex-wrap gap-2">
-  <a class="btn btn-forest" href="{% url 'donations:export_delivered_csv' %}"><i class="bi bi-download"></i> Download delivered-food CSV report</a>
+<div class="dash-actions mb-4">
+  <a class="btn btn-forest" href="{% url 'accounts:approvals' %}"><i class="bi bi-person-check"></i> Approvals{% if counts.awaiting_approval %} <span class="nav-badge" style="background:#fff;color:#073b2a">{{ counts.awaiting_approval }}</span>{% endif %}</a>
+  <a class="btn btn-outline-forest" href="{% url 'donations:partnership_report' %}"><i class="bi bi-diagram-3"></i> Partnership activity report</a>
+  <a class="btn btn-outline-forest" href="{% url 'donations:export_delivered_csv' %}"><i class="bi bi-download"></i> Delivered-food CSV</a>
 </div>
+
+{% if counts.awaiting_approval %}
+<div class="banner banner-warn">
+  <span class="banner-icon"><i class="bi bi-person-exclamation"></i></span>
+  <div class="flex-grow-1"><h6>{{ counts.awaiting_approval }} account{{ counts.awaiting_approval|pluralize }} waiting for approval</h6>
+    <p>{% for u in pending_users %}{{ u.display_name }} ({{ u.get_role_display|lower }}){% if not forloop.last %}, {% endif %}{% endfor %}{% if counts.awaiting_approval > 5 %} and more{% endif %}.</p></div>
+  <a class="btn btn-sm btn-forest align-self-center" href="{% url 'accounts:approvals' %}">Review</a>
+</div>
+{% endif %}
+
 <div class="row g-3 mb-4">
-  <div class="col-6 col-md-2"><div class="stat-card"><div class="stat-value">{{ counts.pending }}</div><div class="stat-label">Pending</div></div></div>
-  <div class="col-6 col-md-2"><div class="stat-card"><div class="stat-value">{{ counts.in_progress }}</div><div class="stat-label">In progress</div></div></div>
-  <div class="col-6 col-md-2"><div class="stat-card"><div class="stat-value">{{ counts.delivered }}</div><div class="stat-label">Delivered</div></div></div>
-  <div class="col-6 col-md-2"><div class="stat-card"><div class="stat-value">{{ counts.donors }}</div><div class="stat-label">Donors</div></div></div>
-  <div class="col-6 col-md-2"><div class="stat-card"><div class="stat-value">{{ counts.recipients }}</div><div class="stat-label">Recipients</div></div></div>
-  <div class="col-6 col-md-2"><div class="stat-card"><div class="stat-value">{{ counts.drivers }}</div><div class="stat-label">Drivers</div></div></div>
+  <div class="col-6 col-md-3 col-lg"><div class="stat-card"><div class="stat-value">{{ counts.pending }}</div><div class="stat-label">Pending</div></div></div>
+  <div class="col-6 col-md-3 col-lg"><div class="stat-card"><div class="stat-value">{{ counts.in_progress }}</div><div class="stat-label">In progress</div></div></div>
+  <div class="col-6 col-md-3 col-lg"><div class="stat-card"><div class="stat-value">{{ counts.delivered }}</div><div class="stat-label">Delivered</div></div></div>
+  <div class="col-6 col-md-3 col-lg"><div class="stat-card"><div class="stat-value">{{ counts.live_offers }}</div><div class="stat-label">Live offers</div></div></div>
+  <div class="col-6 col-md-3 col-lg"><div class="stat-card"><div class="stat-value">{{ counts.expired }}</div><div class="stat-label">Expired</div></div></div>
+  <div class="col-6 col-md-3 col-lg"><div class="stat-card"><div class="stat-value">{{ counts.cancelled }}</div><div class="stat-label">Cancelled</div></div></div>
+  <div class="col-6 col-md-3 col-lg"><div class="stat-card"><div class="stat-value">{{ counts.donors }}</div><div class="stat-label">Donors</div></div></div>
+  <div class="col-6 col-md-3 col-lg"><div class="stat-card"><div class="stat-value">{{ counts.recipients }}</div><div class="stat-label">Recipients</div></div></div>
+  <div class="col-6 col-md-3 col-lg"><div class="stat-card"><div class="stat-value">{{ counts.drivers }}</div><div class="stat-label">Drivers</div></div></div>
 </div>
 <div class="app-card">
+  <div class="table-responsive">
   <table class="table align-middle">
-    <thead><tr><th>Food</th><th>Qty</th><th>Donor</th><th>Recipient</th><th>Driver</th><th>Status</th><th>Listed</th></tr></thead>
+    <thead><tr><th>Food</th><th>Area</th><th>Donor</th><th>Recipient</th><th>Driver</th><th>Status</th><th>Expires</th><th></th></tr></thead>
     <tbody>
     {% for d in donations %}
       <tr>
-        <td>{{ d.food_item }}</td>
-        <td>{{ d.quantity_kg }} kg</td>
+        <td><strong>{{ d.food_item }}</strong><br><span class="tbl-note">{{ d.quantity_kg }} kg</span></td>
+        <td>{{ d.area_display|default:"—" }}</td>
         <td>{{ d.donor_name }}</td>
-        <td>{{ d.recipient.get_full_name|default:"—" }}</td>
-        <td>{{ d.driver.get_full_name|default:"—" }}</td>
-        <td><span class="badge-status {{ d.status|status_class }}">{{ d.status }}</span></td>
-        <td>{{ d.date_listed|date:"d M, H:i" }}</td>
+        <td>{{ d.recipient.display_name|default:"—" }}</td>
+        <td>{{ d.driver.display_name|default:"—" }}</td>
+        <td><span class="badge-status {{ d.status|status_class }}">{{ d.status }}</span>{% if d.cancel_reason %}<div class="tbl-note">{{ d.get_cancel_reason_display }}</div>{% endif %}</td>
+        <td class="text-nowrap">{% if d.expires_at %}{{ d.expires_at|date:"d M, H:i" }}{% else %}<span class="tbl-note">—</span>{% endif %}</td>
+        <td class="text-nowrap">
+          <a class="msg-link d-block" href="{% url 'donations:detail' d.pk %}"><i class="bi bi-clock-history"></i> Timeline</a>
+          {% if d.is_open %}<button type="button" class="btn-link-danger" data-reason-open data-donation="{{ d.pk }}" data-title="Cancel this listing?" data-intro="Everyone involved is notified with the reason." data-confirm="Cancel listing">Cancel</button>{% endif %}
+        </td>
       </tr>
+    {% empty %}
+      <tr><td colspan="8">{% include "partials/empty_state.html" with icon="bi-clipboard-data" title="No donations yet" text="Once donors start listing food you'll see every donation and its status here." %}</td></tr>
     {% endfor %}
     </tbody>
   </table>
+  </div>
 </div>
+{% url 'donations:admin_cancel' as cancel_url %}
+{% include "partials/reason_dialog.html" with reason_form=cancel_form action_url=cancel_url %}
 {% endblock %}

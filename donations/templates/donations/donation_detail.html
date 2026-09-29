@@ -1,0 +1,52 @@
+{% extends "base_app.html" %}
+{% load donation_extras %}
+{% block title %}{{ d.food_item }} · FoodBridge{% endblock %}
+{% block content %}
+<a class="back-link" href="{% url 'accounts:dashboard' %}"><i class="bi bi-arrow-left"></i> Back to dashboard</a>
+<div class="row g-4 mt-1">
+  <div class="col-lg-5">
+    <div class="app-card">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <h3 class="section-title mb-0">{{ d.food_item }}</h3>
+        <span class="badge-status {{ d.status|status_class }}">{{ d.status }}</span>
+      </div>
+      <p class="text-muted">{{ d.quantity_kg }} kg from {{ d.donor_name }}</p>
+      <dl class="row small mb-0">
+        <dt class="col-5">Pickup area</dt><dd class="col-7">{{ d.area_display|default:"—" }}</dd>
+        <dt class="col-5">Pickup address</dt><dd class="col-7">{{ d.pickup_address|default:"—" }}</dd>
+        <dt class="col-5">Listed</dt><dd class="col-7">{{ d.date_listed|date:"d M Y, H:i" }}</dd>
+        <dt class="col-5">Expires</dt><dd class="col-7">{% if d.expires_at %}{{ d.expires_at|date:"d M Y, H:i" }}{% else %}No expiry{% endif %}</dd>
+        <dt class="col-5">Recipient</dt><dd class="col-7">{{ d.recipient.display_name|default:"—" }}</dd>
+        <dt class="col-5">Driver</dt><dd class="col-7">{{ d.driver.display_name|default:"—" }}</dd>
+        {% if leg_km is not None %}<dt class="col-5">Delivery leg</dt><dd class="col-7">{{ leg_km|km }}</dd>{% endif %}
+        {% if d.cancel_reason %}
+          <dt class="col-5">Cancelled because</dt><dd class="col-7">{{ d.get_cancel_reason_display }}{% if d.cancel_note %}<br><span class="text-muted">“{{ d.cancel_note }}”</span>{% endif %}</dd>
+        {% endif %}
+      </dl>
+      {% if d.notes %}<hr><p class="small mb-0">{{ d.notes }}</p>{% endif %}
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="app-card mb-4">
+      <h5 class="section-title mb-3">Timeline</h5>
+      <ul class="timeline">
+        {% for e in events %}
+          <li><span class="dot {% if e.kind == 'cancelled' or e.kind == 'expired' or e.kind == 'timed_out' or e.kind == 'declined' %}bad{% endif %}"><i class="bi {% if e.kind == 'delivered' %}bi-check-lg{% elif e.kind == 'cancelled' or e.kind == 'expired' %}bi-x-lg{% elif e.kind == 'offered' or e.kind == 'timed_out' %}bi-stopwatch{% elif e.kind == 'picked_up' or e.kind == 'withdrawn' %}bi-truck{% else %}bi-dot{% endif %}"></i></span>
+            <strong>{{ e.get_kind_display }}</strong>{% if e.note %}<div class="small text-muted">{{ e.note }}</div>{% endif %}
+            <div class="when">{{ e.created_at|date:"d M, H:i" }}{% if e.actor %} · {{ e.actor.display_name }}{% endif %}</div>
+          </li>
+        {% empty %}<li class="text-muted">No events recorded yet.</li>{% endfor %}
+      </ul>
+    </div>
+    {% if offers %}
+    <div class="app-card">
+      <h5 class="section-title mb-3">Offers</h5>
+      <div class="table-responsive"><table class="table table-sm align-middle mb-0">
+        <thead><tr><th>Who</th><th>For</th><th>Wave</th><th>Distance</th><th>Result</th></tr></thead>
+        <tbody>{% for o in offers %}<tr><td>{{ o.user.display_name }}</td><td>{{ o.get_role_display }}</td><td>{{ o.wave }}</td><td>{% if o.distance_km is not None %}{{ o.distance_km|km }}{% else %}—{% endif %}</td><td>{{ o.get_status_display }}</td></tr>{% endfor %}</tbody>
+      </table></div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

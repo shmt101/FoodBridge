@@ -3,54 +3,105 @@
 {% block title %}Recipient dashboard · FoodBridge{% endblock %}
 {% block content %}
 {% include "partials/dashboard_hello.html" with title="Recipient dashboard" %}
+<div class="dash-actions mb-3">
+  <a class="btn btn-sm btn-outline-forest" href="{% url 'donations:my_report' %}"><i class="bi bi-bar-chart-line"></i> My activity report</a>
+  {% if not user.area %}<a class="btn btn-sm btn-forest" href="{% url 'accounts:profile' %}"><i class="bi bi-geo-alt"></i> Set your area to get nearby offers first</a>{% endif %}
+</div>
+{% include "partials/role_guide.html" with role="recipient" %}
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ stats.offers }}</div><div class="stat-label">Offers waiting for you</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ stats.active }}</div><div class="stat-label">Claims in progress</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ stats.kg_received }} kg</div><div class="stat-label">Received · ≈{{ stats.meals }} meals</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{% if stats.nearest is not None %}{{ stats.nearest|km }}{% else %}—{% endif %}</div><div class="stat-label">Nearest open donation</div></div></div>
+</div>
+
+{% if offers %}
+<h5 class="section-title mb-2"><i class="bi bi-stopwatch text-success"></i> Offers for you</h5>
+<div class="offer-grid">
+  {% for o in offers %}
+    {% with d=o.donation %}
+    <div class="offer-card">
+      <h6>{{ d.food_item }} <span class="text-muted fw-normal">· {{ d.quantity_kg }} kg</span></h6>
+      <div class="meta">
+        <span><i class="bi bi-shop"></i> {{ d.donor_name }}</span>
+        <span class="chip {{ o.distance_km|dist_class }}"><i class="bi bi-geo-alt"></i> {% if o.distance_km is not None %}{{ o.distance_km|km }} away{% else %}{{ d.area_display|default:"Area not set" }}{% endif %}</span>
+      </div>
+      <div class="timer"><i class="bi bi-stopwatch"></i> Reserved for you · <span class="countdown" data-expires="{{ o.expires_at|iso }}" data-done="lapsed">{{ o.expires_at|date:"H:i" }}</span></div>
+      <div class="d-flex gap-2">
+        <form method="post" class="mb-0">{% csrf_token %}<input type="hidden" name="action" value="claim"><input type="hidden" name="donation_id" value="{{ d.pk }}"><button class="btn btn-sm btn-forest" type="submit"><i class="bi bi-hand-thumbs-up"></i> Accept &amp; claim</button></form>
+        <form method="post" class="mb-0">{% csrf_token %}<input type="hidden" name="action" value="decline"><input type="hidden" name="offer_id" value="{{ o.pk }}"><button class="btn btn-sm btn-outline-secondary" type="submit">No thanks</button></form>
+      </div>
+    </div>
+    {% endwith %}
+  {% endfor %}
+</div>
+{% endif %}
+
 <div class="row g-4">
   <div class="col-lg-6">
     <div class="app-card">
-      <h5 class="mb-3">Available donations</h5>
+      <h5 class="mb-1 section-title">Available donations</h5>
+      <p class="tbl-note mb-3">Open to any pantry, nearest first{% if not user.area %} (set your area to see distances){% endif %}.</p>
+      <div class="table-responsive">
       <table class="table align-middle">
-        <thead><tr><th>Food</th><th>Qty</th><th>Donor</th><th></th></tr></thead>
+        <thead><tr><th>Food</th><th>Donor</th><th>Distance</th><th></th></tr></thead>
         <tbody>
         {% for d in available %}
           <tr>
-            <td>{{ d.food_item }}</td>
-            <td>{{ d.quantity_kg }} kg</td>
-            <td>{{ d.donor_name }}</td>
+            <td><strong>{{ d.food_item }}</strong><br><span class="tbl-note">{{ d.quantity_kg }} kg{% if d.expires_at %} · <span class="countdown" data-expires="{{ d.expires_at|iso }}" data-done="expired">{{ d.expires_at|date:"d M H:i" }}</span>{% endif %}</span></td>
+            <td>{{ d.donor_name }}<br><span class="tbl-note">{{ d.area_display }}</span></td>
+            <td><span class="chip {{ d.km_away|dist_class }}">{% if d.km_away is not None %}{{ d.km_away|km }}{% else %}—{% endif %}</span></td>
             <td>
               <form method="post" class="mb-0">{% csrf_token %}
-                <input type="hidden" name="donation_id" value="{{ d.id }}">
+                <input type="hidden" name="action" value="claim"><input type="hidden" name="donation_id" value="{{ d.id }}">
                 <button class="btn btn-sm btn-forest" type="submit">Claim</button>
               </form>
             </td>
           </tr>
         {% empty %}
-          <tr><td colspan="4" class="text-muted">Nothing available right now.</td></tr>
+          <tr><td colspan="4">
+            {% url 'donations:live' as live_url %}
+            {% include "partials/empty_state.html" with icon="bi-search-heart" title="Nothing open right now" text="New donations are offered to nearby pantries first. Check back soon, or browse everything that's live." cta_url=live_url cta_label="Browse live donations" %}
+          </td></tr>
         {% endfor %}
         </tbody>
       </table>
+      </div>
     </div>
   </div>
   <div class="col-lg-6">
     <div class="app-card">
-      <h5 class="mb-3">Your claims</h5>
+      <h5 class="mb-3 section-title">Your claims</h5>
+      <div class="table-responsive">
       <table class="table align-middle">
-        <thead><tr><th>Food</th><th>Qty</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th>Food</th><th>Status</th><th></th></tr></thead>
         <tbody>
         {% for d in my_claims %}
           <tr>
-            <td>{{ d.food_item }}</td>
-            <td>{{ d.quantity_kg }} kg</td>
-            <td><span class="badge-status {{ d.status|status_class }}">{{ d.status }}</span></td>
-            <td>
+            <td><strong>{{ d.food_item }}</strong><br><span class="tbl-note">{{ d.quantity_kg }} kg · {{ d.donor_name }}</span></td>
+            <td><span class="badge-status {{ d.status|status_class }}">{{ d.status }}</span>
+              {% if d.status == 'Cancelled' and d.cancel_reason %}<div class="tbl-note mt-1">{{ d.get_cancel_reason_display }}</div>{% endif %}</td>
+            <td class="text-nowrap">
+              <a class="msg-link d-block" href="{% url 'donations:detail' d.pk %}"><i class="bi bi-clock-history"></i> Timeline</a>
               <a class="msg-link d-block" href="{% url 'inbox:conversation' d.donor_id %}"><i class="bi bi-chat-dots"></i> Donor</a>
               {% if d.driver_id %}<a class="msg-link d-block" href="{% url 'inbox:conversation' d.driver_id %}"><i class="bi bi-chat-dots"></i> Driver</a>{% endif %}
+              {% if d.status == 'Assigned' %}
+                <button type="button" class="btn-link-danger" data-reason-open data-donation="{{ d.pk }}" data-action="release"
+                        data-title="Release this claim?" data-intro="It goes to the next nearest pantry and the donor is told why." data-confirm="Release claim">Release claim</button>
+              {% endif %}
             </td>
           </tr>
         {% empty %}
-          <tr><td colspan="4" class="text-muted">No claims yet.</td></tr>
+          <tr><td colspan="3">
+            {% include "partials/empty_state.html" with icon="bi-bag-heart" title="No claims yet" text="When you accept an offer or claim a donation it shows up here with live status updates." %}
+          </td></tr>
         {% endfor %}
         </tbody>
       </table>
+      </div>
     </div>
   </div>
 </div>
+{% include "partials/reason_dialog.html" with reason_form=release_form %}
 {% endblock %}

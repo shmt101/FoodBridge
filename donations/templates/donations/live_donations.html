@@ -3,42 +3,55 @@
 {% block title %}Live Donations · FoodBridge{% endblock %}
 {% block content %}
 <div class="badge-status status-delivered mb-2 d-inline-block">Live · pulled from the database on every request</div>
-<h2 class="mb-1">Donations in motion</h2>
-<p class="text-muted mb-4">Search and filter what's currently listed, claimed, in transit and delivered.</p>
+<h2 class="section-title mb-1">Donations in motion</h2>
+<p class="text-muted mb-3">Choose where you are and see what's listed, claimed, in transit and delivered around you.</p>
 
-<form method="get" class="row g-2 mb-4">
-  <div class="col-md-6">
-    {{ form.q }}
-  </div>
-  <div class="col-md-4">
-    {{ form.status }}
-  </div>
-  <div class="col-md-2">
-    <button class="btn btn-forest w-100" type="submit">Filter</button>
+<form method="get" class="filter-bar">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-4"><label class="form-label small fw-semibold mb-1">Search</label>{{ form.q }}</div>
+    <div class="col-md-2"><label class="form-label small fw-semibold mb-1">State</label>{{ form.state }}</div>
+    <div class="col-md-3"><label class="form-label small fw-semibold mb-1"><i class="bi bi-geo-alt"></i> I'm in / near</label>{{ form.area }}</div>
+    <div class="col-md-2"><label class="form-label small fw-semibold mb-1">Distance</label>{{ form.radius }}</div>
+    <div class="col-md-3"><label class="form-label small fw-semibold mb-1">Status</label>{{ form.status }}</div>
+    <div class="col-md-2"><button class="btn btn-forest w-100" type="submit"><i class="bi bi-funnel"></i> Filter</button></div>
+    <div class="col-md-3">
+      {% if my_area %}<a class="btn-link-quiet" href="?area={{ my_area }}"><i class="bi bi-crosshair"></i> Use my area</a>{% endif %}
+      <a class="btn-link-quiet ms-2" href="{% url 'donations:live' %}">Clear</a>
+    </div>
   </div>
 </form>
 
 <div class="row g-3 mb-4">
-  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ total_kg|floatformat:0 }} kg</div><div class="stat-label">Rescued so far</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ total_kg|floatformat:0 }} kg</div><div class="stat-label">{% if chosen_area %}Listed near {{ chosen_area_label }}{% else %}Listed{% endif %}</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">≈ {{ meals }}</div><div class="stat-label">Meals' worth</div></div></div>
   <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ delivered_count }}</div><div class="stat-label">Completed deliveries</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card"><div class="stat-value">{{ donations|length }}</div><div class="stat-label">Matching listings</div></div></div>
 </div>
 
 <div class="app-card">
+  <div class="table-responsive">
   <table class="table align-middle">
-    <thead><tr><th>Food</th><th>Quantity</th><th>Donor</th><th>Status</th><th>Listed</th></tr></thead>
+    <thead><tr><th>Food</th><th>Quantity</th><th>Donor</th><th>Area</th>{% if chosen_area %}<th>Distance</th>{% endif %}<th>Status</th><th>Expires</th><th>Listed</th></tr></thead>
     <tbody>
     {% for d in donations %}
       <tr>
-        <td>{{ d.food_item }}</td>
+        <td><strong>{{ d.food_item }}</strong></td>
         <td>{{ d.quantity_kg }} kg</td>
         <td>{{ d.donor_name }}</td>
+        <td>{{ d.area_display|default:"—" }}</td>
+        {% if chosen_area %}<td><span class="chip {{ d.km_away|dist_class }}">{% if d.km_away is not None %}{{ d.km_away|km }}{% else %}—{% endif %}</span></td>{% endif %}
         <td><span class="badge-status {{ d.status|status_class }}">{{ d.status }}</span></td>
+        <td class="text-nowrap">{% if d.expires_at and d.status == 'Pending' or d.expires_at and d.status == 'Assigned' %}<span class="countdown" data-expires="{{ d.expires_at|iso }}" data-done="expired">{{ d.expires_at|date:"d M H:i" }}</span>{% else %}<span class="tbl-note">—</span>{% endif %}</td>
         <td>{{ d.date_listed|date:"d M, H:i" }}</td>
       </tr>
     {% empty %}
-      <tr><td colspan="5" class="text-muted text-center py-4">No donations match your search.</td></tr>
+      <tr><td colspan="8">
+        {% include "partials/empty_state.html" with icon="bi-geo-alt" title="No donations match this area" text="Try a wider distance, another state, or clear the filters to see everything that's live." %}
+      </td></tr>
     {% endfor %}
     </tbody>
   </table>
+  </div>
+  <p class="tbl-note mb-0 mt-2">Distances are straight-line between area centres, so treat them as a guide. Meals are an estimate (about 2 per kg).</p>
 </div>
 {% endblock %}

@@ -1,0 +1,26 @@
+{% load static %}
+<aside class="auth-aside">
+  <div class="brand">Food<span>Bridge</span></div>
+  <div>
+    <h2>{{ headline }}</h2>
+    <p class="lead-sm">{{ subline }}</p>
+  </div>
+  <div class="auth-art" aria-hidden="true">
+    <img src="{% static 'assets/images/foodbridge-hero.png' %}" alt="">
+    <span class="float-chip fc-1"><i class="bi bi-geo-alt-fill"></i> Matched by area</span>
+    <span class="float-chip fc-2"><i class="bi bi-stopwatch-fill"></i> Offers with timers</span>
+  </div>
+  <div class="role-tabs" role="tablist" aria-label="What FoodBridge does for each role">
+    <button type="button" data-role-tab="donor" class="active"><i class="bi bi-shop"></i>Donors</button>
+    <button type="button" data-role-tab="recipient"><i class="bi bi-house-heart"></i>Pantries</button>
+    <button type="button" data-role-tab="driver"><i class="bi bi-truck"></i>Drivers</button>
+  </div>
+  <div>
+    <div class="role-pane active" data-role-pane="donor"><strong>Donors</strong> list surplus food with an expiry time. The nearest pantries are offered it first, and you're told at every step.</div>
+    <div class="role-pane" data-role-pane="recipient"><strong>Pantries</strong> get time-limited offers for food near them, claim what they can use, and can hand it back with a reason if plans change.</div>
+    <div class="role-pane" data-role-pane="driver"><strong>Drivers</strong> see jobs ranked by distance from their address and take the ones that suit their route.</div>
+  </div>
+  <button type="button" class="watch-btn" data-video-modal="{{ intro_video.id }}" data-video-title="{{ intro_video.title }}">
+    <i class="bi bi-play-fill"></i> Watch: how food rescue works
+  </button>
+</aside>
