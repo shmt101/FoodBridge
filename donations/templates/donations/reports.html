@@ -10,7 +10,11 @@
       <strong>{{ period_label }}</strong></p>
   </div>
   <div class="dash-actions">
-    <a class="btn btn-sm btn-outline-forest" href="{% if user.is_admin_role %}{% url 'donations:admin_dashboard' %}{% else %}{% url 'accounts:dashboard' %}{% endif %}"><i class="bi bi-arrow-left"></i> Dashboard</a>
+    {% if user.is_admin_role %}
+      <a class="btn btn-sm btn-outline-forest" href="{% url 'donations:admin_dashboard' %}"><i class="bi bi-arrow-left"></i> Admin dashboard</a>
+    {% elif not user.is_auditor %}
+      <a class="btn btn-sm btn-outline-forest" href="{% url 'accounts:dashboard' %}"><i class="bi bi-arrow-left"></i> Dashboard</a>
+    {% endif %}
   </div>
 </div>
 

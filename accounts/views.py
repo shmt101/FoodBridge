@@ -91,6 +91,8 @@ def dashboard(request):
     user = request.user
     if not user.is_approved:
         return redirect("accounts:pending")
+    if user.is_auditor and not (user.is_staff or user.is_superuser):
+        return redirect("donations:partnership_report")
     if user.is_staff or user.is_superuser:
         return redirect("donations:admin_dashboard")
     role = user.role
@@ -135,7 +137,7 @@ def approvals_queue(request):
     tab = request.GET.get("tab", "pending")
     if tab not in ("pending", "approved", "rejected"):
         tab = "pending"
-    base = User.objects.exclude(role=User.Role.ADMIN).exclude(is_staff=True)
+    base = User.objects.exclude(role=User.Role.ADMIN).exclude(role=User.Role.AUDITOR).exclude(is_staff=True)
     counts = dict(base.values_list("approval_status").annotate(n=Count("id")).order_by())
     users = base.filter(approval_status=tab).order_by("-date_joined")
     return render(request, "accounts/approvals.html", {
@@ -153,7 +155,7 @@ def manage_users(request):
     if request.method == "POST":
         target = get_object_or_404(User, pk=request.POST.get("user_id"))
         action = request.POST.get("action")
-        protected = target.is_superuser or target.is_admin_role()
+        protected = target.is_superuser or target.is_admin_role() or target.is_auditor
         if target.pk == request.user.pk:
             messages.error(request, "You can't change your own account here.")
         elif protected and not request.user.is_superuser:

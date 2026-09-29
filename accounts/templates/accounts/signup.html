@@ -13,9 +13,9 @@
           {% for radio in form.role %}
             <label class="role-card" for="{{ radio.id_for_label }}">
               {{ radio.tag }}
-              <span class="ri"><i class="bi {% if radio.choice_value == 'DONOR' %}bi-shop{% elif radio.choice_value == 'RECIPIENT' %}bi-house-heart{% else %}bi-truck{% endif %}"></i></span>
+              <span class="ri"><i class="bi {% if radio.data.value == 'DONOR' %}bi-shop{% elif radio.data.value == 'RECIPIENT' %}bi-house-heart{% else %}bi-truck{% endif %}"></i></span>
               <strong>{{ radio.choice_label }}</strong>
-              <small>{% if radio.choice_value == 'DONOR' %}I have surplus food{% elif radio.choice_value == 'RECIPIENT' %}I feed people in need{% else %}I can transport food{% endif %}</small>
+              <small>{% if radio.data.value == 'DONOR' %}I have surplus food{% elif radio.data.value == 'RECIPIENT' %}I feed people in need{% else %}I can transport food{% endif %}</small>
             </label>
           {% endfor %}
         </div>

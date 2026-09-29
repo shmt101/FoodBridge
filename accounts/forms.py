@@ -14,7 +14,7 @@ class SignUpForm(UserCreationForm):
     """
 
     role = forms.ChoiceField(
-        choices=[c for c in User.Role.choices if c[0] != User.Role.ADMIN],
+        choices=[c for c in User.Role.choices if c[0] not in (User.Role.ADMIN, User.Role.AUDITOR)],
         widget=forms.RadioSelect,
         help_text="Choose how you'll use FoodBridge. This can't be changed later without an admin.",
     )

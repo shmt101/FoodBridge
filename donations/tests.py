@@ -521,6 +521,7 @@ class LiveFilterTests(TestCase):
 class ReportTests(TestCase):
     def setUp(self):
         self.admin = User.objects.create_user("boss", password=PW, role="ADMIN", is_staff=True)
+        self.auditor = User.objects.create_user("checker", password=PW, role="AUDITOR")
         self.donor = make_user("donor", User.Role.DONOR, area="nsw-parramatta", address="1 A St", org="Corner Bakery")
         self.donor2 = make_user("donor2", User.Role.DONOR, area="nsw-parramatta", address="1 A St", org="Quiet Deli")
         self.pantry = make_user("pantry", User.Role.RECIPIENT, area="nsw-auburn", address="2 B St", org="Hope Kitchen")
@@ -563,23 +564,41 @@ class ReportTests(TestCase):
         start, end = analytics.period_bounds(timezone.localdate() + timedelta(days=2), None)
         self.assertEqual(analytics.network_summary(start, end)["listings"], 0)
 
-    def test_report_page_is_admin_only_and_renders(self):
+    def test_report_page_is_auditor_only_not_plain_admin(self):
         self.client.login(username="donor", password=PW)
         self.assertEqual(self.client.get(reverse("donations:partnership_report")).status_code, 403)
         self.client.login(username="boss", password=PW)
+        self.assertEqual(self.client.get(reverse("donations:partnership_report")).status_code, 403)
+        self.client.login(username="checker", password=PW)
         page = self.client.get(reverse("donations:partnership_report"))
         self.assertContains(page, "Partnership Activity")
         self.assertContains(page, "Corner Bakery")
         self.assertContains(page, "Hope Kitchen")
 
-    def test_csv_exports(self):
+    def test_auditor_account_is_auto_approved_and_cannot_manage_users(self):
+        self.assertTrue(self.auditor.is_approved)
+        self.client.login(username="checker", password=PW)
+        self.assertEqual(self.client.get(reverse("accounts:approvals")).status_code, 403)
+        self.assertEqual(self.client.get(reverse("accounts:manage_users")).status_code, 403)
+        self.assertEqual(self.client.get(reverse("donations:admin_dashboard")).status_code, 403)
+
+    def test_admin_cannot_reach_reports_or_csv_but_keeps_user_management(self):
         self.client.login(username="boss", password=PW)
+        self.assertEqual(self.client.get(reverse("donations:export_delivered_csv")).status_code, 403)
+        self.assertEqual(self.client.get(reverse("donations:partnership_report"), {"export": "donors"}).status_code, 403)
+        self.assertEqual(self.client.get(reverse("accounts:approvals")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("accounts:manage_users")).status_code, 200)
+
+    def test_csv_exports(self):
+        self.client.login(username="checker", password=PW)
         for kind, needle in (("donors", "Corner Bakery"), ("recipients", "Hope Kitchen"),
                              ("drivers", "Driver"), ("partnerships", "Hope Kitchen")):
             resp = self.client.get(reverse("donations:partnership_report"), {"export": kind, "range": "all"})
             self.assertEqual(resp["Content-Type"], "text/csv")
             self.assertIn(needle, resp.content.decode())
         self.assertEqual(self.client.get(reverse("donations:partnership_report"), {"export": "nope"}).status_code, 404)
+        delivered_csv = self.client.get(reverse("donations:export_delivered_csv"))
+        self.assertEqual(delivered_csv["Content-Type"], "text/csv")
 
     def test_partner_sees_only_their_own_report(self):
         self.client.login(username="donor2", password=PW)
@@ -589,8 +608,12 @@ class ReportTests(TestCase):
         csv_resp = self.client.get(reverse("donations:my_report"), {"export": "donors", "range": "all"})
         self.assertIn("Quiet Deli", csv_resp.content.decode())
         self.assertNotIn("Corner Bakery", csv_resp.content.decode())
+        # a plain admin has nothing to see here - reports are the auditor's job now
         self.client.login(username="boss", password=PW)
-        self.assertEqual(self.client.get(reverse("donations:my_report")).status_code, 302)
+        self.assertRedirects(self.client.get(reverse("donations:my_report")), reverse("donations:admin_dashboard"))
+        # the auditor account also has no personal donations, so it's bounced to the full report
+        self.client.login(username="checker", password=PW)
+        self.assertRedirects(self.client.get(reverse("donations:my_report")), reverse("donations:partnership_report"))
 
 
 # =============================================================================
@@ -845,7 +868,8 @@ class FeedbackTests(TestCase):
         donor = {r["name"]: r for r in analytics.donor_rows()}["Corner Bakery"]
         self.assertEqual(donor["rating"], 4.5)          # pantry 4 + driver 5; donor's own 3 excluded
         self.assertEqual(analytics.recipient_rows()[0]["rating"], 4.0)   # donor 3 + driver 5
-        self.client.login(username="boss", password=PW)
+        User.objects.create_user("checker", password=PW, role="AUDITOR")
+        self.client.login(username="checker", password=PW)
         self.assertIn("4.5", self.client.get(reverse("donations:partnership_report"),
                                               {"export": "donors", "range": "all"}).content.decode())
 
@@ -878,3 +902,72 @@ class MapAndSmokeTests(TestCase):
         call_command("smoke_check", stdout=out)
         self.assertIn("All checks passed", out.getvalue())
         self.assertEqual(before, (User.objects.count(), Donation.objects.count()))
+
+
+class SignupRoleCardTests(TestCase):
+    def test_each_role_card_gets_its_own_icon_and_description(self):
+        html = self.client.get(reverse("accounts:signup")).content.decode()
+        self.assertIn('value="DONOR" id="id_role_0"', html)
+        chunk = html[html.index('id="id_role_0"'):html.index('id="id_role_1"')]
+        self.assertIn("bi-shop", chunk)
+        self.assertIn("I have surplus food", chunk)
+        chunk = html[html.index('id="id_role_1"'):html.index('id="id_role_2"')]
+        self.assertIn("bi-house-heart", chunk)
+        self.assertIn("I feed people in need", chunk)
+        chunk = html[html.index('id="id_role_2"'):]
+        self.assertIn("bi-truck", chunk)
+        self.assertIn("I can transport food", chunk)
+
+    def test_auditor_is_not_a_signup_option(self):
+        html = self.client.get(reverse("accounts:signup")).content.decode()
+        self.assertNotIn('value="AUDITOR"', html)
+        self.assertNotIn('value="ADMIN"', html)
+
+
+class AdminAuditorSplitTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user("boss", password=PW, role="ADMIN", is_staff=True)
+        self.auditor = User.objects.create_user("checker", password=PW, role="AUDITOR")
+        self.donor = make_user("donor", User.Role.DONOR, area="nsw-parramatta", address="1 A St")
+        self.pantry = make_user("pantry", User.Role.RECIPIENT, area="nsw-auburn", address="2 B St")
+        self.d = make_donation(self.donor)
+        workflow.claim(self.d.pk, self.pantry)
+
+    def test_auditor_lands_on_the_report_after_login_not_admin_dashboard(self):
+        self.client.login(username="checker", password=PW)
+        self.assertRedirects(self.client.get(reverse("accounts:dashboard")), reverse("donations:partnership_report"))
+
+    def test_nav_shows_the_right_links_and_label_for_each(self):
+        self.client.login(username="boss", password=PW)
+        page = self.client.get(reverse("donations:admin_dashboard"))
+        self.assertContains(page, ">Approvals<")
+        self.assertContains(page, ">Users<")
+        self.assertNotContains(page, ">Reports<")
+        self.assertContains(page, "Admin ·")
+        self.client.login(username="checker", password=PW)
+        page = self.client.get(reverse("donations:partnership_report"))
+        self.assertContains(page, ">Reports<")
+        self.assertNotContains(page, ">Approvals<")
+        self.assertNotContains(page, ">Users<")
+        self.assertContains(page, "Auditor ·")
+
+    def test_admin_cannot_manage_the_fixed_auditor_account(self):
+        self.client.login(username="boss", password=PW)
+        self.client.post(reverse("accounts:manage_users"), {"user_id": self.auditor.pk, "action": "deactivate"})
+        self.auditor.refresh_from_db()
+        self.assertTrue(self.auditor.is_active)
+
+    def test_auditor_never_appears_in_the_approvals_queue(self):
+        self.client.login(username="boss", password=PW)
+        page = self.client.get(reverse("accounts:approvals"), {"tab": "approved"})
+        self.assertNotContains(page, "checker")
+
+    def test_auditor_can_view_any_donation_timeline_for_reporting(self):
+        self.client.login(username="checker", password=PW)
+        self.assertEqual(self.client.get(reverse("donations:detail", args=[self.d.pk])).status_code, 200)
+
+    def test_admin_dashboard_has_no_report_or_csv_buttons(self):
+        self.client.login(username="boss", password=PW)
+        page = self.client.get(reverse("donations:admin_dashboard"))
+        self.assertNotContains(page, "Partnership activity report")
+        self.assertNotContains(page, "Delivered-food CSV")

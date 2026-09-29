@@ -22,7 +22,7 @@ def role_required(*roles):
 
 
 def admin_required(view_func):
-    """Only admin/auditor accounts (or staff)."""
+    """Only Admin accounts (or staff) - approvals and user management, not reports."""
 
     @wraps(view_func)
     @login_required
@@ -30,4 +30,16 @@ def admin_required(view_func):
         if not request.user.is_admin_role():
             raise PermissionDenied("Admins only.")
         return view_func(request, *args, **kwargs)
+    return _wrapped
+
+
+def auditor_required(view_func):
+    """Only the Auditor account (or a superuser, for troubleshooting) - never a plain Admin."""
+
+    @wraps(view_func)
+    @login_required
+    def _wrapped(request, *args, **kwargs):
+        if request.user.is_superuser or request.user.is_auditor:
+            return view_func(request, *args, **kwargs)
+        raise PermissionDenied("This page is only available to the auditor account.")
     return _wrapped

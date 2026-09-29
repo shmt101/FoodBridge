@@ -12,7 +12,8 @@ class User(AbstractUser):
         DONOR = "DONOR", "Donor"
         RECIPIENT = "RECIPIENT", "Recipient"
         DRIVER = "DRIVER", "Driver"
-        ADMIN = "ADMIN", "Admin / Auditor"
+        ADMIN = "ADMIN", "Admin"
+        AUDITOR = "AUDITOR", "Auditor"
 
     class Approval(models.TextChoices):
         PENDING = "pending", "Pending approval"
@@ -60,10 +61,18 @@ class User(AbstractUser):
     def is_admin_role(self):
         return self.role == self.Role.ADMIN or self.is_staff
 
+    @property
+    def is_auditor(self):
+        """The Auditor role: read-only access to Partnership Activity Reports and CSV exports.
+        Deliberately separate from is_admin_role() - an auditor cannot approve or manage users,
+        and an admin cannot pull the network-wide reports."""
+        return self.role == self.Role.AUDITOR
+
     # ---- approval -------------------------------------------------------
     @property
     def is_approved(self):
-        return self.is_superuser or self.is_admin_role() or self.approval_status == self.Approval.APPROVED
+        return (self.is_superuser or self.is_admin_role() or self.is_auditor
+                or self.approval_status == self.Approval.APPROVED)
 
     @property
     def is_rejected(self):
@@ -86,7 +95,7 @@ class User(AbstractUser):
 
     def save(self, *args, **kwargs):
         # Admins / staff never wait in the approval queue.
-        if (self.is_superuser or self.is_staff or self.role == self.Role.ADMIN) \
+        if (self.is_superuser or self.is_staff or self.role in (self.Role.ADMIN, self.Role.AUDITOR)) \
                 and self.approval_status != self.Approval.APPROVED:
             self.approval_status = self.Approval.APPROVED
             self.approved_at = self.approved_at or timezone.now()

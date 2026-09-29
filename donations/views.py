@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.areas import AREAS, STATES, area_label, distance_km
-from accounts.decorators import admin_required, role_required
+from accounts.decorators import admin_required, auditor_required, role_required
 from accounts.models import User
 from . import analytics, workflow
 from inbox import services as notes
@@ -100,7 +100,7 @@ def donation_detail(request, pk):
     """Timeline for one donation - visible to the people involved and to admins."""
     d = get_object_or_404(Donation.objects.select_related("donor", "recipient", "driver"), pk=pk)
     u = request.user
-    if not (u.is_admin_role() or u.pk in (d.donor_id, d.recipient_id, d.driver_id)):
+    if not (u.is_admin_role() or u.is_auditor or u.pk in (d.donor_id, d.recipient_id, d.driver_id)):
         raise PermissionDenied("You can only view donations you're involved in.")
     mine = Feedback.objects.filter(donation=d, author=u).first()
     can_rate = d.status == Status.DELIVERED and u.pk in (d.donor_id, d.recipient_id, d.driver_id)
@@ -386,12 +386,9 @@ def admin_cancel(request):
     return redirect("donations:admin_dashboard")
 
 
-@login_required
+@auditor_required
 def export_delivered_csv(request):
-    """CSV report of delivered food, for food auditors."""
-    if not request.user.is_admin_role():
-        raise PermissionDenied
-
+    """CSV report of delivered food. Auditor-only: the one place all delivered-food data can be pulled."""
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = 'attachment; filename="foodbridge_delivered_report.csv"'
     writer = csv.writer(response)
@@ -446,7 +443,7 @@ def _report_context(request, only=None):
     }
 
 
-@admin_required
+@auditor_required
 def partnership_report(request):
     """Partnership Activity Report: how every donor, pantry and driver is contributing."""
     workflow.maybe_process_timeouts()
@@ -468,8 +465,11 @@ def partnership_report(request):
 def my_activity_report(request):
     """A partner's own activity report (donor, pantry or driver)."""
     user = request.user
-    if user.is_admin_role():
+    if user.is_auditor or user.is_superuser:
         return redirect("donations:partnership_report")
+    if user.is_admin_role():
+        # Plain admins manage people, not reports - that page is auditor-only now.
+        return redirect("donations:admin_dashboard")
     start, end, ctx = _report_context(request, only=user)
     ctx.update({"mine": True, "partnerships": analytics.partnership_rows(start, end, only=user)})
     if user.role == User.Role.DONOR:
