@@ -105,7 +105,7 @@
     <tbody>
     {% for r in recipients %}
       <tr><td><strong>{{ r.name }}</strong></td><td>{{ r.area|default:"—" }}</td><td class="text-end">{{ r.claims }}</td><td class="text-end">{{ r.delivered }}</td><td class="text-end">{{ r.kg_received }}</td><td class="text-end">{{ r.meals }}</td><td class="text-end">{{ r.released }}</td>
-        <td class="text-end">{{ r.offers_accepted }}/{{ r.offers }}{% if r.offers_timed_out %} <span class="tbl-note">({{ r.offers_timed_out }} timed out)</span>{% endif %}</td>
+        <td class="text-end">{{ r.offers_accepted }}/{{ r.offers }}{% if r.offers_timed_out %}<br><span class="tbl-note">{{ r.offers_timed_out }} timed out</span>{% endif %}</td>
         <td class="text-end">{% if r.response_rate is not None %}{{ r.response_rate }}%{% else %}—{% endif %}</td><td class="text-end">{% if r.rating is not None %}{{ r.rating }} ★{% else %}—{% endif %}</td></tr>
     {% empty %}<tr><td colspan="10">{% include "partials/empty_state.html" with icon="bi-house-heart" title="No pantry activity" text="No claims or offers in this period." %}</td></tr>{% endfor %}
     </tbody>
