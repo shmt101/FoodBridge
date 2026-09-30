@@ -33,15 +33,15 @@
 <div class="app-card">
   <div class="table-responsive">
   <table class="table align-middle">
-    <thead><tr><th>Food</th><th>Quantity</th><th>Donor</th><th>Area</th>{% if chosen_area %}<th>Distance</th>{% endif %}<th>Status</th><th>Expires</th><th>Listed</th></tr></thead>
+    <thead><tr><th>Food</th><th class="text-end">Quantity</th><th>Donor</th><th>Area</th>{% if chosen_area %}<th class="text-end">Distance</th>{% endif %}<th>Status</th><th>Expires</th><th>Listed</th></tr></thead>
     <tbody>
     {% for d in donations %}
       <tr>
         <td><strong>{{ d.food_item }}</strong><br>{% include "partials/food_chips.html" %}</td>
-        <td>{{ d.quantity_kg }} kg</td>
+        <td class="text-end">{{ d.quantity_kg }} kg</td>
         <td>{{ d.donor_name }}</td>
         <td>{{ d.area_display|default:"—" }}</td>
-        {% if chosen_area %}<td><span class="chip {{ d.km_away|dist_class }}">{% if d.km_away is not None %}{{ d.km_away|km }}{% else %}—{% endif %}</span></td>{% endif %}
+        {% if chosen_area %}<td class="text-end"><span class="chip {{ d.km_away|dist_class }}">{% if d.km_away is not None %}{{ d.km_away|km }}{% else %}—{% endif %}</span></td>{% endif %}
         <td><span class="badge-status {{ d.status|status_class }}">{{ d.status }}</span></td>
         <td class="text-nowrap">{% if d.expires_at and d.status == 'Pending' or d.expires_at and d.status == 'Assigned' %}<span class="countdown" data-expires="{{ d.expires_at|iso }}" data-done="expired">{{ d.expires_at|date:"d M H:i" }}</span>{% else %}<span class="tbl-note">—</span>{% endif %}</td>
         <td>{{ d.date_listed|date:"d M, H:i" }}</td>
