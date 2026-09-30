@@ -2,6 +2,24 @@
 (function () {
   'use strict';
 
+  // ---- mobile nav toggle ----
+  var navToggle = document.querySelector('[data-nav-toggle]');
+  var navLinks = document.getElementById('navLinks');
+  if (navToggle && navLinks) {
+    navToggle.addEventListener('click', function () {
+      var open = navLinks.classList.toggle('open');
+      navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      navToggle.querySelector('i').className = open ? 'bi bi-x-lg' : 'bi bi-list';
+    });
+    navLinks.querySelectorAll('a.nav-link').forEach(function (a) {
+      a.addEventListener('click', function () {
+        navLinks.classList.remove('open');
+        navToggle.setAttribute('aria-expanded', 'false');
+        navToggle.querySelector('i').className = 'bi bi-list';
+      });
+    });
+  }
+
   // ---- YouTube click-to-load facade (no third-party request until the user presses play) ----
   function loadVideo(btn) {
     var id = btn.getAttribute('data-yt');
