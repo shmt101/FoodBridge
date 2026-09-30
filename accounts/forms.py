@@ -85,3 +85,42 @@ class ProfileForm(forms.ModelForm):
             css = "form-select" if name == "area" else ("form-check-input" if name == "email_notifications" else "form-control")
             field.widget.attrs.setdefault("class", css)
         self.fields["address"].help_text = "Street address, e.g. 12 George St."
+
+
+class AddStaffUserForm(UserCreationForm):
+    """Admin-only form for creating Admin or Auditor accounts directly (never Donor/Recipient/Driver -
+    those come through the public signup + approval flow instead)."""
+
+    role = forms.ChoiceField(widget=forms.RadioSelect)
+    email = forms.EmailField(required=False)
+    first_name = forms.CharField(max_length=150, required=True)
+    last_name = forms.CharField(max_length=150, required=False)
+
+    class Meta:
+        model = User
+        fields = ["username", "first_name", "last_name", "email", "role", "password1", "password2"]
+
+    def __init__(self, *args, role_choices=(), **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["role"].choices = list(role_choices)
+        for name, field in self.fields.items():
+            if name == "role":
+                continue
+            field.widget.attrs.setdefault("class", "form-control")
+
+    def clean_role(self):
+        role = self.cleaned_data["role"]
+        allowed = dict(self.fields["role"].choices)
+        if role not in allowed:
+            raise forms.ValidationError("That role isn't available to you.")
+        return role
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.role = self.cleaned_data["role"]
+        user.email = self.cleaned_data.get("email", "")
+        user.first_name = self.cleaned_data["first_name"]
+        user.last_name = self.cleaned_data.get("last_name", "")
+        if commit:
+            user.save()
+        return user

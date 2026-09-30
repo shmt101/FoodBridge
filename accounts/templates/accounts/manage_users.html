@@ -5,6 +5,7 @@
   <div><h2 class="section-title mb-1">Manage users</h2>
     <p class="text-muted mb-0">Search everyone, change a role, send an account back for review, or deactivate it.</p></div>
   <div class="dash-actions">
+    <a class="btn btn-sm btn-forest" href="{% url 'accounts:add_user' %}"><i class="bi bi-person-plus"></i> Add user</a>
     <a class="btn btn-sm btn-outline-forest" href="{% url 'accounts:approvals' %}"><i class="bi bi-person-check"></i> Approvals</a>
     <a class="btn btn-sm btn-outline-forest" href="{% url 'donations:admin_dashboard' %}"><i class="bi bi-arrow-left"></i> Dashboard</a>
   </div>

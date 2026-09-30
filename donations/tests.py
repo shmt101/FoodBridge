@@ -971,3 +971,45 @@ class AdminAuditorSplitTests(TestCase):
         page = self.client.get(reverse("donations:admin_dashboard"))
         self.assertNotContains(page, "Partnership activity report")
         self.assertNotContains(page, "Delivered-food CSV")
+
+
+class AddUserTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_user("boss", password=PW, role="ADMIN", is_staff=True)
+        self.superuser = User.objects.create_superuser("root", "root@example.com", PW)
+        self.donor = make_user("donor", User.Role.DONOR)
+
+    def create(self, actor, username, role, **extra):
+        self.client.login(username=actor, password=PW)
+        data = {"username": username, "first_name": "New", "role": role,
+                "password1": "S0mething-long-77", "password2": "S0mething-long-77"}
+        data.update(extra)
+        return self.client.post(reverse("accounts:add_user"), data, follow=True)
+
+    def test_plain_admin_can_create_an_auditor_and_it_logs_in_immediately(self):
+        resp = self.create("boss", "newauditor", "AUDITOR")
+        self.assertContains(resp, "Created the Auditor account")
+        user = User.objects.get(username="newauditor")
+        self.assertEqual(user.role, "AUDITOR")
+        self.assertTrue(user.is_approved)
+        self.client.logout()
+        self.assertTrue(self.client.login(username="newauditor", password="S0mething-long-77"))
+
+    def test_plain_admin_cannot_create_another_admin(self):
+        resp = self.create("boss", "sneaky", "ADMIN")
+        self.assertFalse(User.objects.filter(username="sneaky").exists())
+        self.assertContains(resp, "not one of the available choices")
+
+    def test_superuser_can_create_an_admin(self):
+        self.create("root", "newadmin", "ADMIN")
+        user = User.objects.get(username="newadmin")
+        self.assertEqual(user.role, "ADMIN")
+        self.assertTrue(user.is_approved)
+
+    def test_only_admins_can_reach_the_page(self):
+        self.client.login(username="donor", password=PW)
+        self.assertEqual(self.client.get(reverse("accounts:add_user")).status_code, 403)
+
+    def test_add_user_link_appears_on_manage_users_page(self):
+        self.client.login(username="boss", password=PW)
+        self.assertContains(self.client.get(reverse("accounts:manage_users")), "Add user")

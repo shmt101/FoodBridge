@@ -12,7 +12,7 @@ from inbox import services as notes
 
 from . import approvals
 from .decorators import admin_required
-from .forms import ProfileForm, SignUpForm
+from .forms import AddStaffUserForm, ProfileForm, SignUpForm
 from .models import User
 
 
@@ -199,3 +199,25 @@ def manage_users(request):
         "roles": ROLE_CHOICES, "role_filter": User.Role.choices,
         "approval_choices": User.Approval.choices,
     })
+
+
+@admin_required
+def add_user(request):
+    """Create an Admin or Auditor account directly. Only a superuser can create another Admin;
+    any admin can create the Auditor account - Donor/Recipient/Driver still use public signup."""
+    choices = [(User.Role.AUDITOR, "Auditor")]
+    if request.user.is_superuser:
+        choices = [(User.Role.ADMIN, "Admin")] + choices
+
+    if request.method == "POST":
+        form = AddStaffUserForm(request.POST, role_choices=choices)
+        if form.is_valid():
+            user = form.save()
+            messages.success(
+                request, f"Created the {user.get_role_display()} account '{user.username}'. "
+                         "It's already approved and ready to log in."
+            )
+            return redirect("accounts:manage_users")
+    else:
+        form = AddStaffUserForm(role_choices=choices)
+    return render(request, "accounts/add_user.html", {"form": form, "can_make_admin": request.user.is_superuser})

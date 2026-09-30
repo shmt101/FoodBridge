@@ -1,0 +1,52 @@
+{% extends "base_app.html" %}
+{% block title %}Add user · FoodBridge{% endblock %}
+{% block content %}
+<div class="dash-top mb-3">
+  <div><h2 class="section-title mb-1">Add an Admin or Auditor</h2>
+    <p class="text-muted mb-0">Donors, pantries and drivers create their own accounts and wait for your approval.
+      This page is only for {% if can_make_admin %}Admin and Auditor accounts{% else %}the Auditor account{% endif %}, which don't go through that queue.</p></div>
+  <a class="btn btn-sm btn-outline-forest" href="{% url 'accounts:manage_users' %}"><i class="bi bi-arrow-left"></i> Manage users</a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="app-card">
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Role</label>
+          <div class="d-flex gap-2">
+            {% for radio in form.role %}
+              <label class="role-card" style="flex:1;padding:14px 8px" for="{{ radio.id_for_label }}">
+                {{ radio.tag }}
+                <span class="ri"><i class="bi {% if radio.data.value == 'ADMIN' %}bi-shield-check{% else %}bi-clipboard-data{% endif %}"></i></span>
+                <strong>{{ radio.choice_label }}</strong>
+                <small>{% if radio.data.value == 'ADMIN' %}Approves users, manages accounts{% else %}Views &amp; downloads food reports only{% endif %}</small>
+              </label>
+            {% endfor %}
+          </div>
+          {% for e in form.role.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="row g-2">
+          <div class="col-md-6 mb-3"><label class="form-label">Username</label>{{ form.username }}
+            {% for e in form.username.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+          <div class="col-md-6 mb-3"><label class="form-label">Email <span class="text-muted small">(optional)</span></label>{{ form.email }}</div>
+          <div class="col-md-6 mb-3"><label class="form-label">First name</label>{{ form.first_name }}
+            {% for e in form.first_name.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+          <div class="col-md-6 mb-3"><label class="form-label">Last name <span class="text-muted small">(optional)</span></label>{{ form.last_name }}</div>
+          <div class="col-md-6 mb-3"><label class="form-label">Password</label>{{ form.password1 }}
+            {% for e in form.password1.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+          <div class="col-md-6 mb-3"><label class="form-label">Confirm password</label>{{ form.password2 }}
+            {% for e in form.password2.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+        </div>
+        {% for e in form.non_field_errors %}<div class="alert alert-danger py-2 small">{{ e }}</div>{% endfor %}
+        <div class="banner banner-info">
+          <span class="banner-icon"><i class="bi bi-info-circle"></i></span>
+          <div><h6>No approval needed</h6><p>Admin and Auditor accounts are ready to log in immediately after you create them.</p></div>
+        </div>
+        <button class="btn btn-forest" type="submit">Create account</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
