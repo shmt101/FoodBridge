@@ -302,6 +302,60 @@ dialog.fb-dialog .dlg-close{background:none;border:0;font-size:1.3rem;color:var(
 .compact-auth .field-icon .form-control{padding-top:.5rem;padding-bottom:.5rem}
 @media(max-width:900px){.auth-wrap.compact-auth{margin:0;min-height:0}.compact-auth .auth-art{max-width:150px}}
 @media(max-height:700px){.compact-auth .auth-art{max-width:140px}.compact-auth .auth-aside{padding:16px 24px 12px;gap:8px}.compact-auth .role-pane{min-height:44px}}
+/* Extra tightening for the signup form specifically - it has far more fields than login. */
+.compact-auth .auth-form{padding:18px 32px 16px}
+.compact-auth .auth-form h1{font-size:1.3rem;margin-bottom:0}
+.compact-auth .auth-form .sub{margin-bottom:10px;font-size:.86rem}
+.compact-auth .role-grid{gap:6px}
+.compact-auth .role-card{padding:8px 6px 7px}
+.compact-auth .role-card .ri{width:28px;height:28px;font-size:.95rem;margin-bottom:3px}
+.compact-auth .role-card strong{font-size:.8rem}
+.compact-auth .role-card small{font-size:.65rem;line-height:1.15;margin-top:1px}
+.compact-auth .role-note{padding:6px 10px;font-size:.78rem;margin-top:6px}
+.compact-auth .row.g-2{--bs-gutter-x:.5rem;--bs-gutter-y:.4rem}
+.compact-auth .auth-form .form-label{font-size:.72rem;margin-bottom:.15rem}
+.compact-auth .auth-form .form-control,.compact-auth .auth-form .form-select{padding:.3rem .65rem;font-size:.86rem}
+.compact-auth .field-icon .form-control{padding-left:2.2rem}
+.compact-auth .strength{height:4px;margin-top:4px}
+.compact-auth .strength-label{font-size:.68rem;line-height:1.3}
+.compact-auth .form-check{margin-top:.5rem!important}
+.compact-auth .form-check-label{font-size:.76rem;line-height:1.3}
+.compact-auth .approval-note{padding:6px 10px;margin:8px 0;gap:8px}
+.compact-auth .approval-note h6{display:none}
+.compact-auth .approval-note span{font-size:.76rem;line-height:1.3}
+.compact-auth .auth-form button[type="submit"]{padding-top:.45rem;padding-bottom:.45rem}
+.compact-auth .auth-foot{margin-top:8px;font-size:.82rem}
+@media(max-height:760px){.compact-auth .auth-form{padding:14px 28px 12px}.compact-auth .role-card{padding:6px 4px}.compact-auth .approval-note span{font-size:.72rem}}
+.compact-auth .auth-form{padding:14px 32px 12px}
+.compact-auth .auth-foot{margin-top:4px}
+@media(max-height:800px){
+  .compact-auth .role-note{display:none}
+  .compact-auth .role-grid{gap:4px}
+  .compact-auth .role-card{padding:5px 4px 4px}
+  .compact-auth .role-card .ri{width:22px;height:22px;font-size:.82rem;margin-bottom:2px}
+  .compact-auth .role-card small{display:none}
+  .compact-auth .row.g-2{--bs-gutter-y:.22rem}
+  .compact-auth .auth-form .form-label{margin-bottom:.05rem}
+  .compact-auth .auth-form .form-control,.compact-auth .auth-form .form-select{padding:.2rem .6rem}
+  .compact-auth .strength{display:none}
+  .compact-auth .strength-label{display:none}
+  .compact-auth .approval-note{padding:3px 8px;margin:3px 0}
+  .compact-auth .approval-note span{font-size:.68rem}
+  .compact-auth .form-check{margin-top:.25rem!important;margin-bottom:0}
+  .compact-auth .row.g-2{--bs-gutter-y:.12rem}
+  .compact-auth .auth-form .form-control,.compact-auth .auth-form .form-select{padding:.15rem .6rem}
+  .compact-auth .auth-form button[type="submit"]{padding-top:.3rem;padding-bottom:.3rem}
+  .compact-auth .auth-foot{margin-top:2px;font-size:.76rem}
+  .compact-auth .auth-form h1{font-size:1.15rem}
+  .compact-auth .auth-form .sub{display:none}
+  .compact-auth .auth-aside{padding:10px 20px 8px;gap:4px}
+  .compact-auth .auth-art{max-width:100px}
+  .compact-auth .auth-art .float-chip{display:none}
+  .compact-auth .role-pane{min-height:0;padding:6px 10px}
+  .compact-auth .watch-btn{display:none}
+}
+
+
 
 @media(prefers-reduced-motion:reduce){.auth-art img,.auth-art .float-chip{animation:none}}
 

@@ -1,7 +1,7 @@
 {% extends "base_app.html" %}
 {% block title %}Sign up · FoodBridge{% endblock %}
 {% block content %}
-<div class="auth-wrap">
+<div class="auth-wrap compact-auth">
   <div class="auth-shell">
     {% include "accounts/_auth_aside.html" with headline="Join the network turning surplus food into meals." subline="Pick your role, tell us where you are, and an admin will approve your account." %}
     <div class="auth-form">
@@ -65,3 +65,4 @@
 </div>
 {% include "partials/video_dialog.html" %}
 {% endblock %}
+{% block footer %}{% endblock %}
