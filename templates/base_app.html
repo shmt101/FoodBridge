@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   <link href="{% static 'assets/vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="{% static 'assets/css/style.css' %}?v=20260930-3" rel="stylesheet">
+  <link href="{% static 'assets/css/style.css' %}?v=20261001-1" rel="stylesheet">
   <style>
     body{
       font-family:'DM Sans',sans-serif; color:#17211b;
@@ -186,7 +186,9 @@
         <div class="nav-links-primary">
           <a class="nav-link{% if request.resolver_match.url_name == 'live' %} active{% endif %}" href="{% url 'donations:live' %}"><i class="bi bi-broadcast"></i> Live Donations</a>
           {% if user.is_authenticated %}
-            <a class="nav-link{% if request.resolver_match.url_name and 'dashboard' in request.resolver_match.url_name %} active{% endif %}" href="{% url 'accounts:dashboard' %}"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+            {% if user.is_admin_role or not user.is_auditor %}
+              <a class="nav-link{% if request.resolver_match.url_name and 'dashboard' in request.resolver_match.url_name %} active{% endif %}" href="{% url 'accounts:dashboard' %}"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+            {% endif %}
             <a class="nav-link{% if request.resolver_match.app_name == 'inbox' %} active{% endif %}" href="{% url 'inbox:home' %}"><i class="bi bi-inbox"></i> Inbox <span class="nav-badge{% if not unread_total %} d-none{% endif %}" id="inbox-badge">{{ unread_total|default:0 }}</span></a>
             {% if user.is_admin_role %}
               <span class="nav-divider"></span>
@@ -271,7 +273,7 @@
   </script>
   {% endif %}
   <script src="{% static 'assets/vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
-  <script src="{% static 'assets/js/portal.js' %}?v=20260930-3"></script>
+  <script src="{% static 'assets/js/portal.js' %}?v=20261001-1"></script>
   {% block extra_js %}{% endblock %}
 </body>
 </html>

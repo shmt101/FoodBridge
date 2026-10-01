@@ -968,6 +968,16 @@ class AdminAuditorSplitTests(TestCase):
         self.client.login(username="checker", password=PW)
         self.assertEqual(self.client.get(reverse("donations:detail", args=[self.d.pk])).status_code, 200)
 
+    def test_auditor_nav_has_no_redundant_dashboard_link(self):
+        # Reports IS the auditor's dashboard - a second "Dashboard" link to the exact
+        # same page would just be confusing.
+        self.client.login(username="checker", password=PW)
+        page = self.client.get(reverse("donations:partnership_report"))
+        self.assertNotContains(page, "Dashboard</a>")
+        self.client.login(username="boss", password=PW)
+        page = self.client.get(reverse("donations:admin_dashboard"))
+        self.assertContains(page, "Dashboard</a>")
+
     def test_admin_dashboard_has_no_report_or_csv_buttons(self):
         self.client.login(username="boss", password=PW)
         page = self.client.get(reverse("donations:admin_dashboard"))

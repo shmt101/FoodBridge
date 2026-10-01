@@ -28,7 +28,9 @@ Pass `active` to highlight a link.
             </button>
             <div class="dropdown-menu dropdown-menu-end account-menu">
               <div class="account-menu-head">Signed in as <strong>@{{ user.username }}</strong></div>
-              <a class="dropdown-item" href="{% url 'accounts:dashboard' %}"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+              {% if user.is_admin_role or not user.is_auditor %}
+                <a class="dropdown-item" href="{% url 'accounts:dashboard' %}"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+              {% endif %}
               <a class="dropdown-item" href="{% url 'inbox:home' %}"><i class="bi bi-inbox"></i> Inbox{% if unread_total %} <span class="nav-badge">{{ unread_total }}</span>{% endif %}</a>
               <a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="bi bi-person"></i> Profile</a>
               <div class="dropdown-divider"></div>
