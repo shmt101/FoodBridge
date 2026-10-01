@@ -328,7 +328,7 @@ dialog.fb-dialog .dlg-close{background:none;border:0;font-size:1.3rem;color:var(
 .compact-auth .role-note{padding:6px 10px;font-size:.78rem;margin-top:6px}
 .compact-auth .row.g-2{--bs-gutter-x:.5rem;--bs-gutter-y:.4rem}
 .compact-auth .auth-form .form-label{font-size:.72rem;margin-bottom:.15rem}
-.compact-auth .auth-form .form-control,.compact-auth .auth-form .form-select{padding:.3rem .65rem;font-size:.86rem}
+.compact-auth .auth-form .form-control,.compact-auth .auth-form .form-select{padding-top:.3rem;padding-bottom:.3rem;padding-right:.65rem;font-size:.86rem}
 .compact-auth .field-icon .form-control{padding-left:2.2rem}
 .compact-auth .strength{height:4px;margin-top:4px}
 .compact-auth .strength-label{font-size:.68rem;line-height:1.3}
@@ -350,14 +350,14 @@ dialog.fb-dialog .dlg-close{background:none;border:0;font-size:1.3rem;color:var(
   .compact-auth .role-card small{display:none}
   .compact-auth .row.g-2{--bs-gutter-y:.22rem}
   .compact-auth .auth-form .form-label{margin-bottom:.05rem}
-  .compact-auth .auth-form .form-control,.compact-auth .auth-form .form-select{padding:.2rem .6rem}
+  .compact-auth .auth-form .form-control,.compact-auth .auth-form .form-select{padding-top:.2rem;padding-bottom:.2rem;padding-right:.6rem}
   .compact-auth .strength{display:none}
   .compact-auth .strength-label{display:none}
   .compact-auth .approval-note{padding:3px 8px;margin:3px 0}
   .compact-auth .approval-note span{font-size:.68rem}
   .compact-auth .form-check{margin-top:.25rem!important;margin-bottom:0}
   .compact-auth .row.g-2{--bs-gutter-y:.12rem}
-  .compact-auth .auth-form .form-control,.compact-auth .auth-form .form-select{padding:.15rem .6rem}
+  .compact-auth .auth-form .form-control,.compact-auth .auth-form .form-select{padding-top:.15rem;padding-bottom:.15rem;padding-right:.6rem}
   .compact-auth .auth-form button[type="submit"]{padding-top:.3rem;padding-bottom:.3rem}
   .compact-auth .auth-foot{margin-top:2px;font-size:.76rem}
   .compact-auth .auth-form h1{font-size:1.15rem}
