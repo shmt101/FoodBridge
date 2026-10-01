@@ -1,7 +1,8 @@
 {% load static %}
 {% comment %}
-Top bar for the public pages (Home, About). Search box sits top-left;
-Home and Login / Sign up are plain text links. Pass `active` to highlight a link.
+Top bar for the public pages (Home, About). Search box sits top-left; Home/Login/Sign up
+(or the account menu, once signed in) share the same look as the in-app nav in base_app.html.
+Pass `active` to highlight a link.
 {% endcomment %}
 <nav id="mainNav" class="navbar navbar-expand-lg fixed-top public-nav" aria-label="Primary navigation">
   <div class="container">
@@ -13,20 +14,32 @@ Home and Login / Sign up are plain text links. Pass `active` to highlight a link
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarMenu">
-      <ul class="navbar-nav ms-auto align-items-lg-center">
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
         <li class="nav-item"><a class="nav-link{% if active == 'home' %} active{% endif %}" href="{% url 'home' %}"{% if active == 'home' %} aria-current="page"{% endif %}>Home</a></li>
         {% if user.is_authenticated %}
-          <li class="nav-item"><a class="nav-link" href="{% url 'accounts:dashboard' %}">Dashboard</a></li>
-          <li class="nav-item"><a class="nav-link" href="{% url 'inbox:home' %}">Inbox{% if unread_total %} <span class="nav-badge">{{ unread_total }}</span>{% endif %}</a></li>
-          <li class="nav-item">
-            <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">{% csrf_token %}
-              <button type="submit" class="nav-link nav-link-button">Log out</button>
-            </form>
+          <li class="nav-item dropdown ms-lg-2">
+            <button class="account-pill" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="avatar-badge">{{ user.first_name|default:user.username|slice:":1"|upper }}</span>
+              <span class="account-text">
+                <strong>{{ user.first_name|default:user.username }}</strong>
+                <small>{% if user.is_auditor %}Auditor{% elif user.is_admin_role %}Admin{% else %}{{ user.get_role_display }}{% endif %}</small>
+              </span>
+              <i class="bi bi-chevron-down account-caret"></i>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end account-menu">
+              <div class="account-menu-head">Signed in as <strong>@{{ user.username }}</strong></div>
+              <a class="dropdown-item" href="{% url 'accounts:dashboard' %}"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+              <a class="dropdown-item" href="{% url 'inbox:home' %}"><i class="bi bi-inbox"></i> Inbox{% if unread_total %} <span class="nav-badge">{{ unread_total }}</span>{% endif %}</a>
+              <a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="bi bi-person"></i> Profile</a>
+              <div class="dropdown-divider"></div>
+              <form method="post" action="{% url 'accounts:logout' %}" class="mb-0">{% csrf_token %}
+                <button type="submit" class="dropdown-item text-danger"><i class="bi bi-box-arrow-right"></i> Log out</button>
+              </form>
+            </div>
           </li>
         {% else %}
-          <li class="nav-item nav-auth">
-            <a class="nav-link" href="{% url 'accounts:login' %}">Login</a><span class="nav-slash" aria-hidden="true">/</span><a class="nav-link" href="{% url 'accounts:signup' %}">Sign up</a>
-          </li>
+          <li class="nav-item"><a class="nav-link" href="{% url 'accounts:login' %}">Login</a></li>
+          <li class="nav-item ms-lg-1"><a class="btn btn-sm btn-forest" href="{% url 'accounts:signup' %}">Sign up</a></li>
         {% endif %}
       </ul>
     </div>

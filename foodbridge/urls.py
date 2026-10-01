@@ -12,7 +12,7 @@ urlpatterns = [
     path("donations/", include("donations.urls")),
     path("inbox/", include("inbox.urls")),
     path("", TemplateView.as_view(template_name="landing.html"), name="landing"),
-    path("home/", TemplateView.as_view(template_name="index.html"), name="home"),
+    path("home/", views.home, name="home"),
     path("about/", views.about, name="about"),
     path("privacy/", views.privacy, name="privacy"),
     path("terms/", views.terms, name="terms"),

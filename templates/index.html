@@ -17,13 +17,12 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet">
   <link href="{% static 'assets/vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="{% static 'assets/css/style.css' %}?v=20260929-1" rel="stylesheet">
+  <link href="{% static 'assets/css/style.css' %}?v=20260930-3" rel="stylesheet">
 </head>
 <body>
   <a class="skip-link" href="#main-content">Skip to main content</a>
   {% include "partials/public_nav.html" with active="home" %}
 
-  <!-- Home: one screen only. Search Donations + About are the two ways onward. -->
   <main id="main-content">
   <section id="home" class="hero-section home-hero">
     <div class="hero-orb orb-one" aria-hidden="true"></div>
@@ -35,12 +34,81 @@
             <span class="brand-mark"><img src="{% static 'assets/images/foodbridge-mark.svg' %}" alt="" width="46" height="38"></span>
             <span>Food<span>Bridge</span></span>
           </div>
-          <h1>Rescuing surplus food.<br><em>Connecting communities.</em></h1>
-          <p class="hero-lead">FoodBridge is a proposed digital food rescue and redistribution platform connecting local food donors, volunteer drivers and community food relief organisations.</p>
-          <div class="d-flex flex-wrap gap-3 hero-actions">
-            <a class="btn btn-primary-custom" href="{% url 'donations:live' %}">Search Donations <i class="bi bi-search" aria-hidden="true"></i></a>
-            <a class="btn btn-secondary-custom" href="{% url 'about' %}">About</a>
-          </div>
+
+          {% if not personalized %}
+            <h1>Rescuing surplus food.<br><em>Connecting communities.</em></h1>
+            <p class="hero-lead">FoodBridge is a proposed digital food rescue and redistribution platform connecting local food donors, volunteer drivers and community food relief organisations.</p>
+            <div class="d-flex flex-wrap gap-3 hero-actions">
+              <a class="btn btn-primary-custom" href="{% url 'about' %}">About <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+              <button type="button" class="btn btn-secondary-custom" data-video-modal="{{ intro_video.id }}" data-video-title="{{ intro_video.title }}"><i class="bi bi-play-circle" aria-hidden="true"></i> Watch Video</button>
+            </div>
+
+          {% elif home_kind == "pending" %}
+            <div class="eyebrow"><span></span> Awaiting approval</div>
+            <h1>Welcome, <em>{{ user.first_name|default:user.username }}</em>.</h1>
+            <p class="hero-lead">An admin is reviewing your account. You'll be notified the moment you're approved — in the meantime you can browse what's live or update your profile.</p>
+            <div class="d-flex flex-wrap gap-3 hero-actions">
+              <a class="btn btn-primary-custom" href="{% url 'accounts:pending' %}">My status <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+              <a class="btn btn-secondary-custom" href="{% url 'donations:live' %}">Live Donations</a>
+            </div>
+
+          {% elif home_kind == "donor" %}
+            <div class="eyebrow"><span></span> Donor</div>
+            <h1>Welcome back,<br><em>{{ user.first_name|default:user.username }}</em>.</h1>
+            <p class="hero-lead">You have {{ stat_a }} active listing{{ stat_a|pluralize }}, and you've delivered {{ stat_b }} kg of surplus food so far. Every listing you add gets offered to the nearest pantries first.</p>
+            <div class="d-flex flex-wrap gap-3 hero-actions">
+              <a class="btn btn-primary-custom" href="{% url 'donations:donor_dashboard' %}">My dashboard <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+              <a class="btn btn-secondary-custom" href="{% url 'donations:live' %}">Live Donations</a>
+            </div>
+
+          {% elif home_kind == "recipient" %}
+            <div class="eyebrow"><span></span> Recipient</div>
+            <h1>Welcome back,<br><em>{{ user.first_name|default:user.username }}</em>.</h1>
+            <p class="hero-lead">{% if stat_a %}You have {{ stat_a }} offer{{ stat_a|pluralize }} waiting for a response.{% else %}No offers waiting right now.{% endif %} {{ stat_b }} claim{{ stat_b|pluralize }} currently in progress.</p>
+            <div class="d-flex flex-wrap gap-3 hero-actions">
+              <a class="btn btn-primary-custom" href="{% url 'donations:recipient_dashboard' %}">My dashboard <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+              <a class="btn btn-secondary-custom" href="{% url 'donations:live' %}">Live Donations</a>
+            </div>
+
+          {% elif home_kind == "driver" %}
+            <div class="eyebrow"><span></span> Driver</div>
+            <h1>Welcome back,<br><em>{{ user.first_name|default:user.username }}</em>.</h1>
+            {% if driver_ready %}
+              <p class="hero-lead">{% if stat_a %}You have {{ stat_a }} pickup offer{{ stat_a|pluralize }} waiting for you.{% else %}No pickup offers right now — new jobs are ranked by distance from you.{% endif %}</p>
+            {% else %}
+              <p class="hero-lead">Add your area and street address to your profile before you can pick up orders — it's how we rank jobs by distance from you.</p>
+            {% endif %}
+            <div class="d-flex flex-wrap gap-3 hero-actions">
+              <a class="btn btn-primary-custom" href="{% url 'donations:driver_dashboard' %}">My dashboard <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+              <a class="btn btn-secondary-custom" href="{% url 'donations:live' %}">Live Donations</a>
+            </div>
+
+          {% elif home_kind == "admin" %}
+            <div class="eyebrow"><span></span> Admin</div>
+            <h1>Welcome back,<br><em>{{ user.first_name|default:user.username }}</em>.</h1>
+            <p class="hero-lead">{% if pending_count %}{{ pending_count }} account{{ pending_count|pluralize }} waiting for your approval.{% else %}No accounts waiting for approval right now.{% endif %}</p>
+            <div class="d-flex flex-wrap gap-3 hero-actions">
+              <a class="btn btn-primary-custom" href="{% url 'accounts:approvals' %}">Approvals <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+              <a class="btn btn-secondary-custom" href="{% url 'donations:admin_dashboard' %}">Admin dashboard</a>
+            </div>
+
+          {% elif home_kind == "auditor" %}
+            <div class="eyebrow"><span></span> Auditor</div>
+            <h1>Welcome back,<br><em>{{ user.first_name|default:user.username }}</em>.</h1>
+            <p class="hero-lead">Partnership activity, delivered-food totals and every CSV export are one click away.</p>
+            <div class="d-flex flex-wrap gap-3 hero-actions">
+              <a class="btn btn-primary-custom" href="{% url 'donations:partnership_report' %}">Partnership report <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+              <a class="btn btn-secondary-custom" href="{% url 'donations:live' %}">Live Donations</a>
+            </div>
+
+          {% else %}
+            <h1>Welcome back,<br><em>{{ user.first_name|default:user.username }}</em>.</h1>
+            <div class="d-flex flex-wrap gap-3 hero-actions">
+              <a class="btn btn-primary-custom" href="{% url 'accounts:dashboard' %}">My dashboard <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+              <a class="btn btn-secondary-custom" href="{% url 'donations:live' %}">Live Donations</a>
+            </div>
+          {% endif %}
+
           <div class="hero-trust">
             <div class="trust-icons" aria-hidden="true"><span><i class="bi bi-shop"></i></span><span><i class="bi bi-truck"></i></span><span><i class="bi bi-house-heart"></i></span></div>
             <p><strong>One connected platform</strong><br>Donors • Volunteers • Pantries</p>
@@ -57,8 +125,10 @@
     </div>
   </section>
   </main>
+  {% include "partials/video_dialog.html" %}
 
   <script src="{% static 'assets/vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'assets/js/main.js' %}"></script>
+  <script src="{% static 'assets/js/portal.js' %}?v=20260930-3"></script>
 </body>
 </html>

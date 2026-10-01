@@ -233,9 +233,10 @@ class PublicPagesTests(TestCase):
         self.assertNotIn("btn-nav", nav)                 # text links, not boxed buttons
         self.assertNotIn(">Search</a>", nav)
 
-    def test_home_is_single_screen_with_search_and_about_buttons(self):
+    def test_home_is_single_screen_with_about_and_watch_video_buttons(self):
         html = self.client.get(reverse("home")).content.decode()
-        self.assertIn("Search Donations", html)
+        self.assertNotIn("Search Donations", html)
+        self.assertIn("Watch Video", html)
         self.assertIn(f'href="{reverse("about")}"', html)
         self.assertNotIn('id="about"', html)
         self.assertNotIn('id="team"', html)
@@ -262,3 +263,44 @@ class PublicPagesTests(TestCase):
         header = html.split("<header", 1)[1].split("</header>", 1)[0]
         for label in ("Live Donations", "Dashboard", "Inbox", "Profile"):
             self.assertIn(label, header)
+
+
+class PersonalizedHomeTests(TestCase):
+    def test_anonymous_visitor_sees_the_generic_marketing_hero(self):
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn("Rescuing surplus food", html)
+        self.assertNotIn("Welcome back", html)
+
+    def test_pending_user_sees_a_status_specific_hero(self):
+        make_user("newbie", User.Role.DONOR, approval_status=User.Approval.PENDING)
+        self.client.login(username="newbie", password="pass12345")
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn("Welcome, <em>Newbie</em>", html)
+        self.assertIn("reviewing your account", html)
+        self.assertNotIn("Rescuing surplus food", html)
+
+    def test_donor_sees_their_own_stats_and_dashboard_link(self):
+        donor = make_user("donor1", User.Role.DONOR, first_name="Priya")
+        from donations.models import Donation
+        Donation.objects.create(donor=donor, food_item="Bread", quantity_kg=4)
+        self.client.login(username="donor1", password="pass12345")
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn("Welcome back", html)
+        self.assertIn("Priya", html)
+        self.assertIn("1 active listing", html)
+        self.assertIn(reverse("donations:donor_dashboard"), html)
+
+    def test_admin_sees_pending_approval_count(self):
+        User.objects.create_user("boss", password="pass12345", role="ADMIN", is_staff=True)
+        make_user("waiting", User.Role.DONOR, approval_status=User.Approval.PENDING)
+        self.client.login(username="boss", password="pass12345")
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn("1 account", html)
+        self.assertIn(reverse("accounts:approvals"), html)
+
+    def test_auditor_sees_report_shortcut(self):
+        User.objects.create_user("checker", password="pass12345", role="AUDITOR")
+        self.client.login(username="checker", password="pass12345")
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn("Welcome back", html)
+        self.assertIn(reverse("donations:partnership_report"), html)
