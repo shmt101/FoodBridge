@@ -285,6 +285,24 @@ dialog.fb-dialog .dlg-close{background:none;border:0;font-size:1.3rem;color:var(
 .auth-foot a{color:var(--fb-green);font-weight:700;text-decoration:none}
 .errorlist-clean{list-style:none;padding:0;margin:0}
 @media(max-width:900px){.auth-shell{grid-template-columns:1fr}.auth-aside{padding:26px}.auth-art{max-width:230px}.auth-form{padding:28px 22px}.role-grid{gap:8px}}
+/* Compact variant: used on the login page only, so it fits one screen with no scrolling.
+   Signup keeps the roomier spacing above since it has far more fields. */
+.auth-wrap.compact-auth{margin:-1.5rem 0;padding:14px 0 18px;min-height:calc(100vh - 64px);display:flex;align-items:center}
+.compact-auth .auth-shell{min-height:0}
+.compact-auth .auth-aside{padding:22px 26px 18px;gap:10px}
+.compact-auth .auth-aside h2{font-size:1.5rem;line-height:1.15}
+.compact-auth .auth-art{max-width:190px;margin-top:0}
+.compact-auth .role-tabs button{padding:6px 6px}
+.compact-auth .role-pane{min-height:52px;padding:9px 12px;font-size:.82rem}
+.compact-auth .watch-btn{padding:7px 16px 7px 8px;font-size:.92rem}
+.compact-auth .watch-btn i{width:28px;height:28px}
+.compact-auth .auth-form{padding:26px 36px}
+.compact-auth .auth-form h1{font-size:1.5rem}
+.compact-auth .auth-form .sub{margin-bottom:14px}
+.compact-auth .field-icon .form-control{padding-top:.5rem;padding-bottom:.5rem}
+@media(max-width:900px){.auth-wrap.compact-auth{margin:0;min-height:0}.compact-auth .auth-art{max-width:150px}}
+@media(max-height:700px){.compact-auth .auth-art{max-width:140px}.compact-auth .auth-aside{padding:16px 24px 12px;gap:8px}.compact-auth .role-pane{min-height:44px}}
+
 @media(prefers-reduced-motion:reduce){.auth-art img,.auth-art .float-chip{animation:none}}
 
 /* ---- pending approval ---- */
