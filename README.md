@@ -6,7 +6,7 @@ which sits alongside your existing index.html and gets served by the
 same static file server you already have running. Nothing about your
 current deployment changes.
 
-## One-time setup (on the server, via SSH)
+## One-time setup (on the server, via SSH) --- Old Static deployment
 
 1. Copy these 4 files into your project folder, next to index.html:
    `generate_donations_page.py`, `create_donations_table.sql`,
@@ -65,15 +65,3 @@ This is manual by design (matches "static snapshot" over "live"), but if
 you want it to update automatically later, this same script can be
 scheduled with `cron` to re-run every few minutes.
 
-## What this demonstrates for your tutor
-
-- A real MySQL table (`donations`) exists on the college server
-- A Python script connects to it and runs actual SQL (`SELECT ... FROM donations`)
-- The results — sourced from the database, not hardcoded — appear on
-  the live site
-
-The honest caveat: this is a snapshot, not a live per-request query.
-Each visitor sees whatever HTML was generated last, not a fresh DB hit.
-If your tutor asks for genuinely live queries, that's what the full
-Django deployment (already built, sitting in `foodbridge_full_project.zip`
-from earlier) is for — this is the simpler stepping stone.
