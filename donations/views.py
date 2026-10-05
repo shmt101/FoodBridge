@@ -67,6 +67,9 @@ def live_donations(request):
             donations = donations.filter(
                 Q(food_item__icontains=q) | Q(donor__organisation_name__icontains=q)
                 | Q(donor__first_name__icontains=q) | Q(donor__last_name__icontains=q))
+        category = form.cleaned_data.get("category")
+        if category:
+            donations = donations.filter(food_category=category)
         if state and not chosen_area:
             donations = donations.filter(
                 Q(pickup_area__startswith=f"{state.lower()}-")

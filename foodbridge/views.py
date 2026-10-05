@@ -1,14 +1,45 @@
+from django.db.models import Count
 from django.shortcuts import render
 from django.utils import timezone
 
 from . import media_library
+
+# Representative styling for each food category on the Home page's "what's live right
+# now" box. There's no photo-upload field on a Donation, so this uses a bold icon-on-
+# gradient tile rather than a real photo of what was actually donated.
+CATEGORY_SHOWCASE = {
+    "produce": {"label": "Fresh produce", "icon": "bi-basket2-fill", "gradient": "linear-gradient(135deg,#22c55e,#065f46)"},
+    "bakery": {"label": "Bakery", "icon": "bi-cup-hot-fill", "gradient": "linear-gradient(135deg,#f59e0b,#92400e)"},
+    "dairy": {"label": "Dairy & eggs", "icon": "bi-egg-fill", "gradient": "linear-gradient(135deg,#fbbf24,#a16207)"},
+    "meat_fish": {"label": "Meat & fish", "icon": "bi-fish", "gradient": "linear-gradient(135deg,#f87171,#7f1d1d)"},
+    "prepared": {"label": "Prepared meals", "icon": "bi-egg-fried", "gradient": "linear-gradient(135deg,#fb923c,#9a3412)"},
+    "packaged": {"label": "Packaged & pantry", "icon": "bi-box-seam-fill", "gradient": "linear-gradient(135deg,#22d3ee,#155e63)"},
+    "other": {"label": "Surplus food", "icon": "bi-bag-heart-fill", "gradient": "linear-gradient(135deg,#a78bfa,#3730a3)"},
+}
+
+
+def _live_showcase_cards():
+    """Which categories currently have an open listing, with a live count each - feeds
+    the Home page's auto-rotating 'what's live right now' box."""
+    from donations.models import Donation
+    Status = Donation.Status
+    counts = dict(
+        Donation.objects.exclude(status__in=[Status.CANCELLED, Status.EXPIRED])
+        .values_list("food_category").annotate(n=Count("id")).order_by()
+    )
+    cards = []
+    for key, meta in CATEGORY_SHOWCASE.items():
+        n = counts.get(key, 0)
+        if n:
+            cards.append({"key": key, "count": n, **meta})
+    return cards
 
 
 def home(request):
     """The public Home page. Shows the marketing hero to visitors; shows a short,
     role-specific status card to anyone logged in instead."""
     user = request.user
-    context = {}
+    context = {"live_showcase_cards": _live_showcase_cards()}
 
     if not user.is_authenticated:
         return render(request, "index.html", context)

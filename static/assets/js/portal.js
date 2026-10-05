@@ -94,6 +94,66 @@
     });
   })();
 
+  // ---- Home page "what's live" showcase box: rotates through categories that
+  // currently have an open donation, fetched server-side as a safe JSON blob. ----
+  (function () {
+    var box = document.getElementById('showcaseBox');
+    if (!box) return;
+    var dataEl = document.getElementById('showcase-data');
+    var cards = [];
+    try { cards = dataEl ? JSON.parse(dataEl.textContent) : []; } catch (e) { cards = []; }
+
+    var tile = document.getElementById('showcaseTile');
+    var icon = document.getElementById('showcaseIcon');
+    var label = document.getElementById('showcaseLabel');
+    var count = document.getElementById('showcaseCount');
+    var link = document.getElementById('showcaseLink');
+    var dotsWrap = document.getElementById('showcaseDots');
+    var liveUrl = box.getAttribute('data-live-url');
+
+    if (!cards.length) {
+      // Nothing live right now - keep the friendly default tile, just point the link
+      // at Live Donations and skip rotation entirely.
+      if (count) count.textContent = 'Nothing listed this minute';
+      return;
+    }
+
+    cards.forEach(function (_, i) {
+      var dot = document.createElement('span');
+      if (i === 0) dot.className = 'active';
+      dotsWrap.appendChild(dot);
+    });
+
+    var idx = 0;
+    function show(i) {
+      var c = cards[i];
+      tile.style.background = c.gradient;
+      icon.classList.add('swap');
+      label.style.opacity = 0;
+      count.style.opacity = 0;
+      setTimeout(function () {
+        icon.innerHTML = '<i class="bi ' + c.icon + '"></i>';
+        label.textContent = c.label;
+        count.textContent = c.count + ' item' + (c.count === 1 ? '' : 's') + ' available now';
+        link.href = liveUrl + '?category=' + encodeURIComponent(c.key);
+        icon.classList.remove('swap');
+        label.style.opacity = 1;
+        count.style.opacity = 1;
+      }, 250);
+      Array.prototype.forEach.call(dotsWrap.children, function (d, di) {
+        d.classList.toggle('active', di === i);
+      });
+    }
+
+    show(0);
+    if (cards.length > 1) {
+      setInterval(function () {
+        idx = (idx + 1) % cards.length;
+        show(idx);
+      }, 3800);
+    }
+  })();
+
   // ---- dashboard tabs: [data-dash-tab] buttons show/hide matching [data-dash-panel] ----
   document.querySelectorAll('.dash-tabs').forEach(function (tabs) {
     tabs.addEventListener('click', function (e) {

@@ -34,6 +34,38 @@ class NotificationFlowTests(TestCase):
     def texts(self, user):
         return list(Notification.objects.filter(user=user).values_list("text", flat=True))
 
+    def test_unread_json_includes_recent_items_scoped_to_the_caller_only(self):
+        Donation.objects.create(donor=self.donor_a, food_item="Bread", quantity_kg=Decimal("12.00"))
+        self.client.login(username="drivera", password="pass12345")
+        data = self.client.get(reverse("inbox:unread")).json()
+        self.assertEqual(data["notifications"], 1)
+        self.assertEqual(len(data["recent_notifications"]), 1)
+        self.assertIn("Bread", data["recent_notifications"][0]["text"])
+        self.assertIn("url", data["recent_notifications"][0])
+        driver_a_id = data["recent_notifications"][0]["id"]
+
+        # driver_b got their own, separate notification for the same listing - confirm
+        # it's genuinely a different row, and that driver_b's feed never shows driver_a's.
+        self.client.login(username="driverb", password="pass12345")
+        data_b = self.client.get(reverse("inbox:unread")).json()
+        self.assertNotEqual(driver_a_id, data_b["recent_notifications"][0]["id"])
+
+    def test_unread_json_includes_recent_messages_with_sender_name(self):
+        Message.objects.create(sender=self.donor_a, recipient=self.pantry, body="Still available?")
+        self.client.login(username="pantry1", password="pass12345")
+        data = self.client.get(reverse("inbox:unread")).json()
+        self.assertEqual(data["messages"], 1)
+        self.assertIn("Still available?", data["recent_messages"][0]["text"])
+
+    def test_admin_only_notifications_never_appear_for_other_roles(self):
+        admin = User.objects.create_user("boss", password="pass12345", role="ADMIN", is_staff=True)
+        Notification.objects.create(user=admin, kind="approval", text="A new donor signed up")
+        for other in (self.donor_a, self.pantry, self.driver_a):
+            self.client.login(username=other.username, password="pass12345")
+            data = self.client.get(reverse("inbox:unread")).json()
+            self.assertEqual(data["notifications"], 0)
+            self.assertEqual(data["recent_notifications"], [])
+
     def test_new_listing_alerts_drivers_and_offers_recipients_but_not_donors(self):
         Donation.objects.create(donor=self.donor_a, food_item="Bread", quantity_kg=Decimal("12.00"))
         for u in (self.driver_a, self.driver_b, self.pantry):

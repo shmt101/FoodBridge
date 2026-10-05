@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
 from django.http import JsonResponse
+from django.urls import reverse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
@@ -102,9 +103,33 @@ def mark_all_read(request):
 
 
 def unread_json(request):
-    """Polled by the nav badge so new items appear without a full page reload."""
+    """Polled by the nav badge (counts) and the toast popup (the newest unread items
+    themselves, so the page can tell what's genuinely new since the last poll). Every
+    query here is scoped to request.user - a person only ever sees their own unread
+    items, never another donor's, recipient's, driver's or admin's."""
     if not request.user.is_authenticated:
         return JsonResponse({"error": "auth"}, status=401)
-    n = Notification.objects.filter(user=request.user, read_at__isnull=True).count()
-    m = Message.objects.filter(recipient=request.user, read_at__isnull=True).count()
-    return JsonResponse({"notifications": n, "messages": m, "total": n + m})
+    notif_qs = Notification.objects.filter(user=request.user, read_at__isnull=True).order_by("-created_at")
+    msg_qs = Message.objects.filter(recipient=request.user, read_at__isnull=True).select_related("sender").order_by("-created_at")
+    n = notif_qs.count()
+    m = msg_qs.count()
+    recent_notifications = [
+        {
+            "id": x.pk, "text": x.text,
+            "url": reverse("inbox:notification_open", args=[x.pk]),
+            "created_at": x.created_at.isoformat(),
+        }
+        for x in notif_qs[:5]
+    ]
+    recent_messages = [
+        {
+            "id": x.pk, "text": f"{x.sender.display_name}: {x.body[:80]}",
+            "url": reverse("inbox:conversation", args=[x.sender_id]),
+            "created_at": x.created_at.isoformat(),
+        }
+        for x in msg_qs[:5]
+    ]
+    return JsonResponse({
+        "notifications": n, "messages": m, "total": n + m,
+        "recent_notifications": recent_notifications, "recent_messages": recent_messages,
+    })

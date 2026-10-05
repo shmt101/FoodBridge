@@ -113,6 +113,10 @@ class DonationSearchForm(forms.Form):
         required=False, choices=RADIUS_CHOICES, label="Distance",
         widget=forms.Select(attrs={"class": "form-select"}),
     )
+    category = forms.ChoiceField(
+        required=False, choices=[("", "Any category")] + list(Donation.Category.choices), label="Category",
+        widget=forms.Select(attrs={"class": "form-select"}),
+    )
 
 
 class FeedbackForm(forms.Form):
