@@ -4,19 +4,8 @@
 {% block content %}
 {% include "partials/dashboard_hello.html" with title="Admin dashboard" %}
 <div class="dash-actions mb-4">
-  <a class="btn btn-forest" href="{% url 'accounts:approvals' %}"><i class="bi bi-person-check"></i> Approvals{% if counts.awaiting_approval %} <span class="nav-badge" style="background:#fff;color:#073b2a">{{ counts.awaiting_approval }}</span>{% endif %}</a>
-  <a class="btn btn-outline-forest" href="{% url 'donations:feedback' %}"><i class="bi bi-flag"></i> Feedback &amp; issues{% if counts.open_issues %} <span class="nav-badge">{{ counts.open_issues }}</span>{% endif %}</a>
-  <a class="btn btn-outline-forest" href="{% url 'accounts:manage_users' %}"><i class="bi bi-people"></i> Manage users</a>
+  <a class="btn btn-forest" href="{% url 'donations:feedback' %}"><i class="bi bi-flag"></i> Feedback &amp; issues{% if counts.open_issues %} <span class="nav-badge" style="background:#fff;color:#073b2a">{{ counts.open_issues }}</span>{% endif %}</a>
 </div>
-
-{% if counts.awaiting_approval %}
-<div class="banner banner-warn">
-  <span class="banner-icon"><i class="bi bi-person-exclamation"></i></span>
-  <div class="flex-grow-1"><h6>{{ counts.awaiting_approval }} account{{ counts.awaiting_approval|pluralize }} waiting for approval</h6>
-    <p>{% for u in pending_users %}{{ u.display_name }} ({{ u.get_role_display|lower }}){% if not forloop.last %}, {% endif %}{% endfor %}{% if counts.awaiting_approval > 5 %} and more{% endif %}.</p></div>
-  <a class="btn btn-sm btn-forest align-self-center" href="{% url 'accounts:approvals' %}">Review</a>
-</div>
-{% endif %}
 
 <div class="row g-3 mb-4">
   <div class="col-6 col-lg-3">
@@ -43,32 +32,4 @@
     </div>
   </div>
 </div>
-<div class="app-card">
-  <div class="table-responsive">
-  <table class="table align-middle">
-    <thead><tr><th>Food</th><th>Area</th><th>Donor</th><th>Recipient</th><th>Driver</th><th>Status</th><th>Expires</th><th></th></tr></thead>
-    <tbody>
-    {% for d in donations %}
-      <tr>
-        <td><strong>{{ d.food_item }}</strong><br><span class="tbl-note">{{ d.quantity_kg }} kg</span></td>
-        <td>{{ d.area_display|default:"—" }}</td>
-        <td>{{ d.donor_name }}</td>
-        <td>{{ d.recipient.display_name|default:"—" }}</td>
-        <td>{{ d.driver.display_name|default:"—" }}</td>
-        <td><span class="badge-status {{ d.status|status_class }}">{{ d.status }}</span>{% if d.cancel_reason %}<div class="tbl-note">{{ d.get_cancel_reason_display }}</div>{% endif %}</td>
-        <td class="text-nowrap">{% if d.expires_at %}{{ d.expires_at|date:"d M, H:i" }}{% else %}<span class="tbl-note">—</span>{% endif %}</td>
-        <td class="text-nowrap">
-          <a class="msg-link d-block" href="{% url 'donations:detail' d.pk %}"><i class="bi bi-clock-history"></i> Timeline</a>
-          {% if d.is_open %}<button type="button" class="btn-link-danger" data-reason-open data-donation="{{ d.pk }}" data-title="Cancel this listing?" data-intro="Everyone involved is notified with the reason." data-confirm="Cancel listing">Cancel</button>{% endif %}
-        </td>
-      </tr>
-    {% empty %}
-      <tr><td colspan="8">{% include "partials/empty_state.html" with icon="bi-clipboard-data" title="No donations yet" text="Once donors start listing food you'll see every donation and its status here." %}</td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
-  </div>
-</div>
-{% url 'donations:admin_cancel' as cancel_url %}
-{% include "partials/reason_dialog.html" with reason_form=cancel_form action_url=cancel_url %}
 {% endblock %}

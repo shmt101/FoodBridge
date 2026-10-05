@@ -111,6 +111,8 @@ def donation_detail(request, pk):
         "leg_km": distance_km(d.effective_area, d.recipient.area) if d.recipient_id else None,
         "can_rate": can_rate, "my_feedback": mine, "feedback_form": FeedbackForm(initial=initial),
         "all_feedback": d.feedback.select_related("author") if u.is_admin_role() else None,
+        "can_cancel": u.is_admin_role() and d.is_open,
+        "cancel_form": ReasonForm(reasons=None) if u.is_admin_role() else None,
     })
 
 
@@ -351,8 +353,6 @@ def admin_dashboard(request):
     donations = Donation.objects.select_related("donor", "recipient", "driver")
     now = timezone.now()
     return render(request, "donations/admin_dashboard.html", {
-        "donations": donations[:200],
-        "cancel_form": ReasonForm(reasons=None),
         "counts": {
             "pending": donations.filter(status=Status.PENDING).count(),
             "in_progress": donations.filter(status__in=[Status.ASSIGNED, Status.IN_TRANSIT]).count(),
@@ -367,22 +367,24 @@ def admin_dashboard(request):
             "awaiting_approval": User.objects.filter(approval_status=User.Approval.PENDING)
                                  .exclude(role=User.Role.ADMIN).exclude(is_staff=True).count(),
         },
-        "pending_users": User.objects.filter(approval_status=User.Approval.PENDING)
-                         .exclude(role=User.Role.ADMIN).exclude(is_staff=True).order_by("date_joined")[:5],
     })
 
 
 @admin_required
 def admin_cancel(request):
-    """Admin cancels any open listing, recording the reason."""
+    """Admin cancels any open listing, recording the reason. Used from a donation's own
+    timeline page, so send them back there rather than to the dashboard."""
+    donation_id = request.POST.get("donation_id")
     if request.method == "POST":
         form = ReasonForm(request.POST, reasons=None)
         if form.is_valid():
-            _run(request, workflow.cancel_listing, request.POST.get("donation_id"), request.user,
+            _run(request, workflow.cancel_listing, donation_id, request.user,
                  form.cleaned_data["reason"], form.cleaned_data["note"],
                  success="Listing cancelled and everyone involved has been told why.")
         else:
             messages.error(request, "Please choose a reason.")
+    if donation_id:
+        return redirect("donations:detail", pk=donation_id)
     return redirect("donations:admin_dashboard")
 
 

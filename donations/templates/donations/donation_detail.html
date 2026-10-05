@@ -27,6 +27,13 @@
         {% endif %}
       </dl>
       {% if d.notes %}<hr><p class="small mb-0">{{ d.notes }}</p>{% endif %}
+      {% if can_cancel %}
+        <hr>
+        <button type="button" class="btn btn-sm btn-outline-danger" data-reason-open data-donation="{{ d.pk }}"
+                data-title="Cancel this listing?" data-intro="Everyone involved is notified with the reason." data-confirm="Cancel listing">
+          <i class="bi bi-x-circle"></i> Cancel listing
+        </button>
+      {% endif %}
     </div>
   </div>
   <div class="col-lg-7">
@@ -72,4 +79,8 @@
     {% endif %}
   </div>
 </div>
+{% if can_cancel %}
+  {% url 'donations:admin_cancel' as cancel_url %}
+  {% include "partials/reason_dialog.html" with reason_form=cancel_form action_url=cancel_url %}
+{% endif %}
 {% endblock %}

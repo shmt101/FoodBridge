@@ -994,6 +994,32 @@ class AdminAuditorSplitTests(TestCase):
         page = self.client.get(reverse("donations:admin_dashboard"))
         self.assertContains(page, "Dashboard</a>")
 
+    def test_admin_dashboard_is_stats_and_feedback_only(self):
+        self.client.login(username="boss", password=PW)
+        page = self.client.get(reverse("donations:admin_dashboard"))
+        html = page.content.decode()
+        self.assertContains(page, "Feedback")
+        # "Approvals" legitimately still appears once, in the shared nav - but the dashboard
+        # body itself should have no second Approvals link and no Manage-users button/table.
+        self.assertEqual(html.count('href="/accounts/approvals/"'), 1)
+        self.assertNotContains(page, "Manage users")
+        self.assertNotContains(page, "<table")
+        self.assertNotContains(page, "waiting for approval")
+
+    def test_admin_can_cancel_from_the_donation_detail_page_not_the_dashboard(self):
+        d = make_donation(self.donor)
+        self.client.login(username="boss", password=PW)
+        page = self.client.get(reverse("donations:detail", args=[d.pk]))
+        self.assertContains(page, "Cancel listing")
+        self.client.login(username="donor", password=PW)
+        page = self.client.get(reverse("donations:detail", args=[d.pk]))
+        self.assertNotContains(page, "Cancel listing")
+        self.client.login(username="boss", password=PW)
+        resp = self.client.post(reverse("donations:admin_cancel"),
+                                {"donation_id": d.pk, "reason": "other", "note": "Recall"})
+        self.assertRedirects(resp, reverse("donations:detail", args=[d.pk]))
+        self.assertEqual(Donation.objects.get(pk=d.pk).status, "Cancelled")
+
     def test_admin_dashboard_has_no_report_or_csv_buttons(self):
         self.client.login(username="boss", password=PW)
         page = self.client.get(reverse("donations:admin_dashboard"))

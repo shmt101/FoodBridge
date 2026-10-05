@@ -189,6 +189,27 @@ class MessagingTests(TestCase):
             self.assertIn("/accounts/login/", resp["Location"])
         self.assertEqual(self.client.get(reverse("inbox:unread")).status_code, 401)
 
+    def test_inbox_has_separate_notification_and_message_tabs(self):
+        self.client.login(username="alice", password="pass12345")
+        page = self.client.get(reverse("inbox:home"))
+        self.assertContains(page, 'data-dash-tab="notifications"')
+        self.assertContains(page, 'data-dash-tab="messages"')
+        self.assertContains(page, 'data-dash-panel="notifications"')
+        self.assertContains(page, 'data-dash-panel="messages"')
+        # no unread anything yet -> notifications tab is the default
+        self.assertNotContains(page, 'data-dash-panel="notifications" hidden')
+        self.assertContains(page, 'data-dash-panel="messages" hidden')
+
+    def test_inbox_defaults_to_whichever_tab_has_more_unread(self):
+        Message.objects.create(sender=self.b, recipient=self.a, body="hi")
+        Message.objects.create(sender=self.c, recipient=self.a, body="hello")
+        self.client.login(username="alice", password="pass12345")
+        page = self.client.get(reverse("inbox:home"))
+        self.assertEqual(page.context["unread_messages"], 2)
+        self.assertEqual(page.context["unread_notifications"], 0)
+        self.assertContains(page, 'data-dash-panel="notifications" hidden')
+        self.assertNotContains(page, 'data-dash-panel="messages" hidden')
+
 
 class DashboardGreetingTests(TestCase):
     def test_each_role_sees_hello_with_their_first_name(self):
