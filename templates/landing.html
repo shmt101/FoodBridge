@@ -17,7 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Manrope:wght@600;700;800&amp;display=swap" rel="stylesheet">
   <link href="{% static 'assets/vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-  <link href="{% static 'assets/css/style.css' %}?v=20260929-1" rel="stylesheet">
+  <link href="{% static 'assets/css/style.css' %}?v=20261005-16" rel="stylesheet">
 </head>
 <body>
   <!-- Landing page: intentionally has no navigation bar of any kind. -->
@@ -75,6 +75,33 @@
       </div>
     </section>
 
+    <section class="showcase-section">
+      <div class="container">
+        <div class="showcase-wrap">
+          <div class="showcase-copy">
+            <div class="eyebrow"><span></span> Right now</div>
+            <h2>What's live on FoodBridge</h2>
+            {% if live_showcase_cards %}
+              <p>Food is being rescued across the network as you read this - here's a little of what's currently available.</p>
+            {% else %}
+              <p>Nothing's listed at this exact moment, but new surplus food is added all the time - take a look at what's already moved.</p>
+            {% endif %}
+            <a class="btn btn-primary-custom" href="{% url 'donations:live' %}">See what's live <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+          </div>
+          {{ live_showcase_cards|json_script:"showcase-data" }}
+          <div class="showcase-box" id="showcaseBox" data-live-url="{% url 'donations:live' %}">
+            <div class="showcase-dots" id="showcaseDots"></div>
+            <div class="showcase-tile" id="showcaseTile">
+              <div class="showcase-icon" id="showcaseIcon"><i class="bi bi-basket2-fill"></i></div>
+              <div class="showcase-label" id="showcaseLabel">Donations</div>
+              <div class="showcase-count" id="showcaseCount"></div>
+              <a class="showcase-link" id="showcaseLink" href="{% url 'donations:live' %}">Click here to see more <i class="bi bi-arrow-right"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="closing-section">
       <div class="container text-center reveal">
         <span class="closing-icon"><i class="bi bi-heart-fill"></i></span>
@@ -104,5 +131,6 @@
 
   <script src="{% static 'assets/vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
   <script src="{% static 'assets/js/main.js' %}"></script>
+  <script src="{% static 'assets/js/portal.js' %}?v=20261005-16"></script>
 </body>
 </html>

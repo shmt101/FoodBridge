@@ -35,6 +35,12 @@ def _live_showcase_cards():
     return cards
 
 
+def landing(request):
+    """The root splash page ("/"). Separate from the Home page ("/home/") - this one has
+    no nav bar by design - but shares the same live showcase data."""
+    return render(request, "landing.html", {"live_showcase_cards": _live_showcase_cards()})
+
+
 def home(request):
     """The public Home page. Shows the marketing hero to visitors; shows a short,
     role-specific status card to anyone logged in instead."""

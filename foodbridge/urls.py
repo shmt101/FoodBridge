@@ -2,7 +2,6 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.views.generic import TemplateView
 
 from . import views
 
@@ -11,7 +10,7 @@ urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("donations/", include("donations.urls")),
     path("inbox/", include("inbox.urls")),
-    path("", TemplateView.as_view(template_name="landing.html"), name="landing"),
+    path("", views.landing, name="landing"),
     path("home/", views.home, name="home"),
     path("about/", views.about, name="about"),
     path("privacy/", views.privacy, name="privacy"),

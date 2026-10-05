@@ -297,6 +297,16 @@ class PublicPagesTests(TestCase):
         self.assertNotIn("<nav", html)
         self.assertContains(self.client.get("/"), "Explore FoodBridge")
 
+    def test_landing_also_shows_the_live_showcase_box(self):
+        donor = make_user("showcasedonor", User.Role.DONOR, area="nsw-newtown")
+        Donation.objects.create(donor=donor, food_item="Bread", quantity_kg=5,
+                                food_category="bakery", pickup_area="nsw-newtown", safety_confirmed=True)
+        resp = self.client.get("/")
+        self.assertContains(resp, 'id="showcaseBox"')
+        self.assertContains(resp, "What's live on FoodBridge")
+        html = resp.content.decode()
+        self.assertIn("Bakery", html)  # the live category actually appears in the embedded JSON
+
     def test_home_nav_is_search_box_plus_home_and_login_signup_text_links(self):
         nav = self.nav(reverse("home"))
         self.assertIn('type="search"', nav)              # search text box
