@@ -1,0 +1,64 @@
+{% extends "base_app.html" %}
+{% block title %}Privacy Policy · FoodBridge{% endblock %}
+{% block content %}
+<div class="legal-wrap">
+  <div class="app-card legal">
+    <h1 class="section-title mb-1">Privacy Policy</h1>
+    <p class="tbl-note mb-3">Last updated 28 September 2026 · how FoodBridge handles data across the donor, pantry, driver, admin and auditor roles.</p>
+
+    <div class="legal-accordion">
+      <details>
+        <summary>What we collect</summary>
+        <div>
+          <ul>
+            <li><strong>Account details</strong> — name, username, email, phone, organisation, area and street address, and an optional bio and avatar.</li>
+            <li><strong>Activity</strong> — donations you list, claim, collect or cancel (with reasons), offers sent to you and how you responded, ratings and feedback, and inbox messages.</li>
+            <li><strong>Technical data</strong> — a session cookie to keep you logged in, and failed-login counts, kept briefly to protect accounts from guessing attacks.</li>
+          </ul>
+        </div>
+      </details>
+      <details>
+        <summary>How we use it</summary>
+        <div>
+          <ul>
+            <li>To run the approval queue, and to match listings to the nearest pantries and drivers using your area.</li>
+            <li>To send notifications and, unless you switch it off in your profile, emails about offers, approvals, cancellations and expiry.</li>
+            <li>To power Partnership Activity Reports for admins and auditors, and each partner's own activity report.</li>
+          </ul>
+        </div>
+      </details>
+      <details>
+        <summary>Who can see it</summary>
+        <div>
+          <ul>
+            <li><strong>Admins</strong> see account details and manage approvals; <strong>auditors</strong> see network-wide reports and CSV exports, but not account management.</li>
+            <li><strong>People in the same donation</strong> (donor, pantry, driver) see each other's names, the pickup details and that donation's timeline.</li>
+            <li><strong>The public Live Donations page and map</strong> show food, quantity, donor name and area only — never a street address, phone number or email.</li>
+          </ul>
+        </div>
+      </details>
+      <details>
+        <summary>Keeping and deleting data</summary>
+        <div>
+          <p>We keep your data while your account is active, so delivery history and reports stay accurate. To request a copy or deletion, message a FoodBridge administrator. Deleting an account removes your profile; anonymised delivery totals may remain in network reports.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Sharing with anyone outside FoodBridge</summary>
+        <div>
+          <p>We don't sell data or use it for advertising. If email is enabled, your address is passed only to our email provider, only to deliver messages you'd expect. The About page loads video from YouTube only if you press play, and the map loads tiles from OpenStreetMap — neither gets your account data.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Contact</summary>
+        <div>
+          <p>Questions about your data? Message a FoodBridge administrator through the site.</p>
+        </div>
+      </details>
+    </div>
+
+    <p class="attrib mt-3 mb-0">This is a project built for a course. It isn't legal advice — have it reviewed before using FoodBridge with real people's data.</p>
+  </div>
+</div>
+{% endblock %}
+{% block footer %}{% endblock %}

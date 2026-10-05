@@ -751,7 +751,7 @@ class SecurityAndValidationTests(TestCase):
 
     def test_legal_pages_are_public(self):
         for name in ("privacy", "terms"):
-            self.assertContains(self.client.get(reverse(name)), "not legal advice")
+            self.assertContains(self.client.get(reverse(name)), "isn't legal advice")
 
 
 class ManageUsersTests(TestCase):
