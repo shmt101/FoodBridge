@@ -125,6 +125,10 @@
       .account-pill{ width:100%; justify-content:flex-start; }
     }
     .nav-badge{ display:inline-block; min-width:1.25rem; padding:0 .4rem; margin-left:.15rem; border-radius:999px; background:#16a34a; color:#fff; font-size:.68rem; font-weight:800; line-height:1.25rem; text-align:center; vertical-align:middle; }
+    .nav-badge{ display:inline-flex; align-items:center; gap:3px; }
+    .nav-badge i{ font-size:.62rem; }
+    .nav-badge-notif{ background:#3b82f6; }
+    .nav-badge-msg{ background:#16a34a; }
     .dash-hello{
       background:linear-gradient(120deg,#eefaf1 0%,#ffffff 65%);
       border:1px solid rgba(190,220,200,.6); border-radius:20px; padding:20px 24px;
@@ -217,7 +221,10 @@
             {% if user.is_admin_role or not user.is_auditor %}
               <a class="nav-link{% if request.resolver_match.url_name and 'dashboard' in request.resolver_match.url_name %} active{% endif %}" href="{% url 'accounts:dashboard' %}"><i class="bi bi-grid-1x2"></i> Dashboard</a>
             {% endif %}
-            <a class="nav-link{% if request.resolver_match.app_name == 'inbox' %} active{% endif %}" href="{% url 'inbox:home' %}"><i class="bi bi-inbox"></i> Inbox <span class="nav-badge{% if not unread_total %} d-none{% endif %}" id="inbox-badge">{{ unread_total|default:0 }}</span></a>
+            <a class="nav-link{% if request.resolver_match.app_name == 'inbox' %} active{% endif %}" href="{% url 'inbox:home' %}"><i class="bi bi-inbox"></i> Inbox
+              <span class="nav-badge nav-badge-notif{% if not unread_notifications %} d-none{% endif %}" id="inbox-badge-notif" title="{{ unread_notifications }} unread notification{{ unread_notifications|pluralize }}"><i class="bi bi-bell-fill"></i>{{ unread_notifications|default:0 }}</span>
+              <span class="nav-badge nav-badge-msg{% if not unread_messages %} d-none{% endif %}" id="inbox-badge-msg" title="{{ unread_messages }} unread message{{ unread_messages|pluralize }}"><i class="bi bi-chat-fill"></i>{{ unread_messages|default:0 }}</span>
+            </a>
             {% if user.is_admin_role %}
               <span class="nav-divider"></span>
               <a class="nav-link{% if request.resolver_match.url_name == 'approvals' %} active{% endif %}" href="{% url 'accounts:approvals' %}"><i class="bi bi-person-check"></i> Approvals{% if pending_approvals %} <span class="nav-badge">{{ pending_approvals }}</span>{% endif %}</a>
@@ -286,15 +293,24 @@
   {% if user.is_authenticated %}
   <script>
     (function () {
-      var badge = document.getElementById('inbox-badge');
-      if (!badge) return;
+      var notifBadges = document.querySelectorAll('.nav-badge-notif');
+      var msgBadges = document.querySelectorAll('.nav-badge-msg');
+      if (!notifBadges.length && !msgBadges.length) return;
+      function setGroup(badges, count) {
+        badges.forEach(function (b) {
+          var icon = b.querySelector('i');
+          b.textContent = count;
+          if (icon) b.prepend(icon);
+          b.classList.toggle('d-none', !count);
+        });
+      }
       function refresh() {
         fetch("{% url 'inbox:unread' %}", { credentials: 'same-origin', headers: { 'Accept': 'application/json' } })
           .then(function (r) { return r.ok ? r.json() : null; })
           .then(function (data) {
             if (!data) return;
-            badge.textContent = data.total;
-            badge.classList.toggle('d-none', !data.total);
+            setGroup(notifBadges, data.notifications);
+            setGroup(msgBadges, data.messages);
           })
           .catch(function () {});
       }

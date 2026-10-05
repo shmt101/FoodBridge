@@ -189,6 +189,27 @@ class MessagingTests(TestCase):
             self.assertIn("/accounts/login/", resp["Location"])
         self.assertEqual(self.client.get(reverse("inbox:unread")).status_code, 401)
 
+    def test_nav_shows_separate_badges_for_notifications_and_messages(self):
+        Message.objects.create(sender=self.b, recipient=self.a, body="hi")
+        Message.objects.create(sender=self.c, recipient=self.a, body="hello")
+        Notification.objects.create(user=self.a, text="Something happened", kind="info")
+        self.client.login(username="alice", password="pass12345")
+        page = self.client.get(reverse("donations:live"))  # any page sharing the app nav
+        html = page.content.decode()
+        self.assertIn('nav-badge-notif', html)
+        self.assertIn('nav-badge-msg', html)
+        # each badge shows its own count, not the combined total
+        self.assertIn('bi-bell-fill"></i>1', html)
+        self.assertIn('bi-chat-fill"></i>2', html)
+
+    def test_nav_hides_a_badge_entirely_when_that_count_is_zero(self):
+        Notification.objects.create(user=self.a, text="Something happened", kind="info")
+        self.client.login(username="alice", password="pass12345")
+        page = self.client.get(reverse("donations:live"))
+        html = page.content.decode()
+        msg_pos = html.index('class="nav-badge nav-badge-msg')
+        self.assertIn('d-none', html[msg_pos:msg_pos + 40])
+
     def test_inbox_has_separate_notification_and_message_tabs(self):
         self.client.login(username="alice", password="pass12345")
         page = self.client.get(reverse("inbox:home"))

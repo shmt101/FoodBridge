@@ -49,6 +49,11 @@ html.landing-page{scroll-padding-top:0}
 .nav-slash{color:#9db0a5;font-weight:600}
 .nav-link-button{background:none;border:0;cursor:pointer;font-family:inherit}
 .nav-badge{display:inline-block;min-width:1.25rem;padding:0 .4rem;margin-left:.15rem;border-radius:999px;background:var(--green);color:#fff;font-size:.68rem;font-weight:800;line-height:1.25rem;text-align:center;vertical-align:middle}
+.nav-badge{display:inline-flex;align-items:center;gap:3px}
+.nav-badge i{font-size:.62rem}
+.nav-badge-notif{background:#3b82f6}
+.nav-badge-msg{background:var(--green)}
+
 /* Shared with the app nav (base_app.html) so logged-in users see one consistent design language on public pages too */
 .btn-forest{background:var(--forest);color:#fff;border-radius:10px;border:1px solid var(--forest);font-weight:700;transition:background .15s ease}
 .btn-forest:hover{background:#0a5a3f;color:#fff;border-color:#0a5a3f}
