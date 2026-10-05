@@ -3,146 +3,159 @@
 {% block title %}Driver dashboard · FoodBridge{% endblock %}
 {% block content %}
 {% include "partials/dashboard_hello.html" with title="Driver dashboard" %}
-<div class="dash-actions mb-3">
-  <a class="btn btn-sm btn-outline-forest" href="{% url 'donations:my_report' %}"><i class="bi bi-bar-chart-line"></i> My activity report</a>
-</div>
 
-{% if not ready %}
-<div class="banner banner-warn">
-  <span class="banner-icon"><i class="bi bi-geo-alt"></i></span>
-  <div>
-    <h6>Complete your profile to pick up orders</h6>
-    <p>You can browse jobs, but you can't accept any until your profile has your {{ missing|join:" and " }}. We use it to rank jobs by distance from you.</p>
-    <a class="btn btn-sm btn-forest mt-2" href="{% url 'accounts:profile' %}"><i class="bi bi-pencil-square"></i> Update my profile</a>
-  </div>
-</div>
-{% else %}
-<div class="readiness mb-3"><span class="chip dist-near"><i class="bi bi-check2-circle"></i> Ready to pick up</span><span class="tbl-note">Distances are measured from {{ user.area_display }}.</span></div>
-{% endif %}
-{% include "partials/role_guide.html" with role="driver" %}
+<div class="row g-4">
+  <div class="col-lg-3">
+    <div class="d-flex flex-column gap-2 mb-3">
+      <a class="btn btn-sm btn-outline-forest w-100" href="{% url 'donations:my_report' %}"><i class="bi bi-bar-chart-line"></i> My activity report</a>
+    </div>
 
-<div class="row g-3 mb-4">
-  <div class="col-lg-7">
-    <div class="app-card h-100">
-      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
-        <h5 class="section-title mb-0"><i class="bi bi-pin-map text-success"></i> Pickups near you</h5>
-        <span class="tbl-note">Straight-line distance between area centres</span>
+    {% if not ready %}
+    <div class="banner banner-warn mb-3">
+      <span class="banner-icon"><i class="bi bi-geo-alt"></i></span>
+      <div>
+        <h6>Complete your profile</h6>
+        <p>You can browse jobs, but you can't accept any until your profile has your {{ missing|join:" and " }}.</p>
+        <a class="btn btn-sm btn-forest mt-2" href="{% url 'accounts:profile' %}"><i class="bi bi-pencil-square"></i> Update my profile</a>
       </div>
-      <div class="row g-3 mb-3">
-        <div class="col-4"><div class="mini-stat"><b>{{ snapshot.open_jobs }}</b><span>Open jobs</span></div></div>
-        <div class="col-4"><div class="mini-stat"><b>{% if snapshot.nearest_km is not None %}{{ snapshot.nearest_km|km }}{% else %}—{% endif %}</b><span>Nearest pickup</span></div></div>
-        <div class="col-4"><div class="mini-stat"><b>{{ snapshot.within_25 }}</b><span>Within 25 km</span></div></div>
+    </div>
+    {% else %}
+    <div class="chip dist-near mb-3"><i class="bi bi-check2-circle"></i> Ready to pick up</div>
+    {% endif %}
+
+    <div class="app-card mb-3">
+      <h6 class="section-title mb-2"><i class="bi bi-pin-map text-success"></i> Pickups near you</h6>
+      <div class="row g-2 mb-2">
+        <div class="col-4"><div class="mini-stat"><b>{{ snapshot.open_jobs }}</b><span>Open</span></div></div>
+        <div class="col-4"><div class="mini-stat"><b>{% if snapshot.nearest_km is not None %}{{ snapshot.nearest_km|km }}{% else %}—{% endif %}</b><span>Nearest</span></div></div>
+        <div class="col-4"><div class="mini-stat"><b>{{ snapshot.within_25 }}</b><span>≤25 km</span></div></div>
       </div>
       {% for b in snapshot.bands %}
         <div class="bar-row"><span>{{ b.label }}</span><div class="bar-track"><div class="bar-fill" style="width:{{ b.pct }}%"></div></div><span class="bar-n">{{ b.n }}</span></div>
       {% endfor %}
+      <p class="tbl-note mt-2 mb-0">Straight-line distance between area centres.</p>
     </div>
-  </div>
-  <div class="col-lg-5">
-    <div class="app-card h-100">
-      <h5 class="section-title mb-3"><i class="bi bi-speedometer2 text-success"></i> Your delivery record</h5>
-      <div class="row g-3">
+
+    <div class="app-card">
+      <h6 class="section-title mb-2"><i class="bi bi-speedometer2 text-success"></i> Your delivery record</h6>
+      <div class="row g-2">
         <div class="col-6"><div class="mini-stat"><b>{{ snapshot.deliveries }}</b><span>Deliveries</span></div></div>
         <div class="col-6"><div class="mini-stat"><b>{{ snapshot.kg_moved }} kg</b><span>Food moved</span></div></div>
-        <div class="col-6"><div class="mini-stat"><b>{{ snapshot.km_driven }} km</b><span>Approx. distance</span></div></div>
-        <div class="col-6"><div class="mini-stat"><b>{% if snapshot.avg_km is not None %}{{ snapshot.avg_km|km }}{% else %}—{% endif %}</b><span>Avg per delivery</span></div></div>
+        <div class="col-6"><div class="mini-stat"><b>{{ snapshot.km_driven }} km</b><span>Distance</span></div></div>
+        <div class="col-6"><div class="mini-stat"><b>{% if snapshot.avg_km is not None %}{{ snapshot.avg_km|km }}{% else %}—{% endif %}</b><span>Avg/delivery</span></div></div>
       </div>
     </div>
   </div>
-</div>
 
-{% if offer_jobs %}
-<h5 class="section-title mb-2"><i class="bi bi-stopwatch text-success"></i> Pickup offers for you</h5>
-<div class="offer-grid">
-  {% for d in offer_jobs %}
-    <div class="offer-card">
-      <h6>{{ d.food_item }} <span class="text-muted fw-normal">· {{ d.quantity_kg }} kg</span></h6>
-      <div class="meta">
-        <span><i class="bi bi-shop"></i> {{ d.donor_name }} → {{ d.recipient.display_name }}</span>
-        <span class="chip {{ d.km_to_pickup|dist_class }}"><i class="bi bi-geo-alt"></i> {% if d.km_to_pickup is not None %}{{ d.km_to_pickup|km }} to pickup{% else %}{{ d.area_display|default:"Area not set" }}{% endif %}</span>
-        {% if d.km_leg is not None %}<span class="chip chip-soft"><i class="bi bi-arrow-right"></i> {{ d.km_leg|km }} delivery leg</span>{% endif %}
-      </div>
-      <div class="mb-2">{% include "partials/food_chips.html" %}</div>
-      <div class="timer"><i class="bi bi-stopwatch"></i> Reserved for you · <span class="countdown" data-expires="{{ d.offer.expires_at|iso }}" data-done="lapsed">{{ d.offer.expires_at|date:"H:i" }}</span></div>
-      <div class="d-flex gap-2">
-        <form method="post" class="mb-0">{% csrf_token %}<input type="hidden" name="action" value="accept"><input type="hidden" name="donation_id" value="{{ d.pk }}">
-          <button class="btn btn-sm btn-forest" type="submit" {% if not ready %}disabled title="Complete your profile first"{% endif %}><i class="bi bi-truck"></i> Accept pickup</button></form>
-        <form method="post" class="mb-0">{% csrf_token %}<input type="hidden" name="action" value="decline"><input type="hidden" name="offer_id" value="{{ d.offer.pk }}"><button class="btn btn-sm btn-outline-secondary" type="submit">No thanks</button></form>
-      </div>
+  <div class="col-lg-9">
+    <div class="dash-tabs mb-3" role="tablist">
+      <button type="button" class="dash-tab{% if offer_jobs %} active{% endif %}" data-dash-tab="offers" role="tab" aria-selected="{% if offer_jobs %}true{% else %}false{% endif %}">
+        <i class="bi bi-stopwatch"></i> Offers <span class="chip chip-soft ms-1">{{ offer_jobs|length }}</span>
+      </button>
+      <button type="button" class="dash-tab{% if not offer_jobs %} active{% endif %}" data-dash-tab="needs-driver" role="tab" aria-selected="{% if not offer_jobs %}true{% else %}false{% endif %}">
+        <i class="bi bi-truck"></i> Needs a driver <span class="chip chip-soft ms-1">{{ needs_driver|length }}</span>
+      </button>
+      <button type="button" class="dash-tab" data-dash-tab="deliveries" role="tab" aria-selected="false">
+        <i class="bi bi-signpost-2"></i> My deliveries <span class="chip chip-soft ms-1">{{ my_deliveries|length }}</span>
+      </button>
     </div>
-  {% endfor %}
-</div>
-{% endif %}
 
-<div class="row g-4">
-  <div class="col-lg-7">
-    <div class="app-card">
-      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <h5 class="section-title mb-0">Needs a driver</h5>
-        <div class="radius-pills">
-          <a href="?" class="{% if radius is None %}active{% endif %}">Any</a>
-          <a href="?radius=10" class="{% if radius == 10.0 %}active{% endif %}">≤ 10 km</a>
-          <a href="?radius=25" class="{% if radius == 25.0 %}active{% endif %}">≤ 25 km</a>
-          <a href="?radius=50" class="{% if radius == 50.0 %}active{% endif %}">≤ 50 km</a>
-        </div>
-      </div>
-      <div class="table-responsive">
-      <table class="table align-middle">
-        <thead><tr><th>Food</th><th>Pickup</th><th>Distance</th><th></th></tr></thead>
-        <tbody>
-        {% for d in needs_driver %}
-          <tr>
-            <td><strong>{{ d.food_item }}</strong><br>{% include "partials/food_chips.html" %}<br><span class="tbl-note">{{ d.quantity_kg }} kg{% if d.expires_at %} · <span class="countdown" data-expires="{{ d.expires_at|iso }}" data-done="expired">{{ d.expires_at|date:"d M H:i" }}</span>{% endif %}</span></td>
-            <td>{{ d.area_display|default:"—" }}<br><span class="tbl-note">{{ d.pickup_address|default:"—" }}</span></td>
-            <td>
-              {% if d.km_to_pickup is not None %}
-                <span class="chip {{ d.km_to_pickup|dist_class }}"><i class="bi bi-geo-alt"></i> {{ d.km_to_pickup|km }}</span>
-                {% if d.km_leg is not None %}<div class="tbl-note mt-1">+ {{ d.km_leg|km }} delivery · {{ d.km_total|km }} total</div>{% endif %}
-              {% else %}<span class="chip dist-unknown">Add your area</span>{% endif %}
-            </td>
-            <td class="text-nowrap">
-              <a class="msg-link d-block mb-1" href="{% url 'inbox:conversation' d.donor_id %}"><i class="bi bi-chat-dots"></i> Donor</a>
-              <form method="post" class="mb-0">{% csrf_token %}
-                <input type="hidden" name="donation_id" value="{{ d.id }}"><input type="hidden" name="action" value="accept">
-                <button class="btn btn-sm btn-forest" type="submit" {% if not ready %}disabled title="Complete your profile first"{% endif %}>Accept</button>
-              </form>
-            </td>
-          </tr>
-        {% empty %}
-          <tr><td colspan="4">
-            {% include "partials/empty_state.html" with icon="bi-truck" title="No pickups waiting" text="Jobs appear here once a pantry has claimed a donation. Nearby jobs are offered to you first." %}
-          </td></tr>
+    <div class="dash-panel" data-dash-panel="offers"{% if not offer_jobs %} hidden{% endif %}>
+      {% if offer_jobs %}
+      <div class="offer-grid">
+        {% for d in offer_jobs %}
+          <div class="offer-card">
+            <h6>{{ d.food_item }} <span class="text-muted fw-normal">· {{ d.quantity_kg }} kg</span></h6>
+            <div class="meta">
+              <span><i class="bi bi-shop"></i> {{ d.donor_name }} → {{ d.recipient.display_name }}</span>
+              <span class="chip {{ d.km_to_pickup|dist_class }}"><i class="bi bi-geo-alt"></i> {% if d.km_to_pickup is not None %}{{ d.km_to_pickup|km }} to pickup{% else %}{{ d.area_display|default:"Area not set" }}{% endif %}</span>
+              {% if d.km_leg is not None %}<span class="chip chip-soft"><i class="bi bi-arrow-right"></i> {{ d.km_leg|km }} delivery leg</span>{% endif %}
+            </div>
+            <div class="mb-2">{% include "partials/food_chips.html" %}</div>
+            <div class="timer"><i class="bi bi-stopwatch"></i> Reserved for you · <span class="countdown" data-expires="{{ d.offer.expires_at|iso }}" data-done="lapsed">{{ d.offer.expires_at|date:"H:i" }}</span></div>
+            <div class="d-flex gap-2">
+              <form method="post" class="mb-0">{% csrf_token %}<input type="hidden" name="action" value="accept"><input type="hidden" name="donation_id" value="{{ d.pk }}">
+                <button class="btn btn-sm btn-forest" type="submit" {% if not ready %}disabled title="Complete your profile first"{% endif %}><i class="bi bi-truck"></i> Accept pickup</button></form>
+              <form method="post" class="mb-0">{% csrf_token %}<input type="hidden" name="action" value="decline"><input type="hidden" name="offer_id" value="{{ d.offer.pk }}"><button class="btn btn-sm btn-outline-secondary" type="submit">No thanks</button></form>
+            </div>
+          </div>
         {% endfor %}
-        </tbody>
-      </table>
       </div>
+      {% else %}
+      <div class="app-card">{% include "partials/empty_state.html" with icon="bi-stopwatch" title="No pickup offers right now" text="Once a pantry claims a donation, the nearest drivers are offered the pickup - yours will show up here." %}</div>
+      {% endif %}
     </div>
-  </div>
-  <div class="col-lg-5">
-    <div class="app-card mb-4">
-      <h5 class="mb-3 section-title">Your active deliveries</h5>
-      {% for d in my_deliveries %}
-        <div class="border rounded-4 p-3 mb-2">
-          <div class="d-flex justify-content-between"><strong>{{ d.food_item }}</strong><span class="badge-status {{ d.status|status_class }}">{{ d.status }}</span></div>
-          <div class="tbl-note mb-2">{{ d.quantity_kg }} kg · {{ d.area_display }} → {{ d.recipient.display_name|default:"pantry" }}{% if d.km_leg is not None %} · {{ d.km_leg|km }}{% endif %}</div>
-          <div class="d-flex flex-wrap gap-2 align-items-center">
-            <form method="post" class="mb-0">{% csrf_token %}<input type="hidden" name="donation_id" value="{{ d.id }}"><input type="hidden" name="action" value="delivered"><button class="btn btn-sm btn-forest" type="submit">Mark delivered</button></form>
-            <a class="msg-link" href="{% url 'inbox:conversation' d.donor_id %}"><i class="bi bi-chat-dots"></i> Donor</a>
-            {% if d.recipient_id %}<a class="msg-link" href="{% url 'inbox:conversation' d.recipient_id %}"><i class="bi bi-chat-dots"></i> Recipient</a>{% endif %}
-            <button type="button" class="btn-link-danger ms-auto" data-reason-open data-donation="{{ d.pk }}" data-action="withdraw"
-                    data-title="Hand this delivery back?" data-intro="It returns to the pool for another driver and the donor and pantry are told why." data-confirm="Withdraw">Can't deliver</button>
+
+    <div class="dash-panel" data-dash-panel="needs-driver"{% if offer_jobs %} hidden{% endif %}>
+      <div class="app-card">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+          <h5 class="section-title mb-0">Needs a driver</h5>
+          <div class="radius-pills">
+            <a href="?" class="{% if radius is None %}active{% endif %}">Any</a>
+            <a href="?radius=10" class="{% if radius == 10.0 %}active{% endif %}">≤ 10 km</a>
+            <a href="?radius=25" class="{% if radius == 25.0 %}active{% endif %}">≤ 25 km</a>
+            <a href="?radius=50" class="{% if radius == 50.0 %}active{% endif %}">≤ 50 km</a>
           </div>
         </div>
-      {% empty %}
-        {% include "partials/empty_state.html" with icon="bi-signpost-2" title="Nothing in progress" text="Accept a pickup and it will show here with the route length." %}
-      {% endfor %}
+        <div class="table-responsive">
+        <table class="table align-middle">
+          <thead><tr><th>Food</th><th>Pickup</th><th>Distance</th><th></th></tr></thead>
+          <tbody>
+          {% for d in needs_driver %}
+            <tr>
+              <td><strong>{{ d.food_item }}</strong><br>{% include "partials/food_chips.html" %}<br><span class="tbl-note">{{ d.quantity_kg }} kg{% if d.expires_at %} · <span class="countdown" data-expires="{{ d.expires_at|iso }}" data-done="expired">{{ d.expires_at|date:"d M H:i" }}</span>{% endif %}</span></td>
+              <td>{{ d.area_display|default:"—" }}<br><span class="tbl-note">{{ d.pickup_address|default:"—" }}</span></td>
+              <td>
+                {% if d.km_to_pickup is not None %}
+                  <span class="chip {{ d.km_to_pickup|dist_class }}"><i class="bi bi-geo-alt"></i> {{ d.km_to_pickup|km }}</span>
+                  {% if d.km_leg is not None %}<div class="tbl-note mt-1">+ {{ d.km_leg|km }} delivery · {{ d.km_total|km }} total</div>{% endif %}
+                {% else %}<span class="chip dist-unknown">Add your area</span>{% endif %}
+              </td>
+              <td class="text-nowrap">
+                <a class="msg-link d-block mb-1" href="{% url 'inbox:conversation' d.donor_id %}"><i class="bi bi-chat-dots"></i> Donor</a>
+                <form method="post" class="mb-0">{% csrf_token %}
+                  <input type="hidden" name="donation_id" value="{{ d.id }}"><input type="hidden" name="action" value="accept">
+                  <button class="btn btn-sm btn-forest" type="submit" {% if not ready %}disabled title="Complete your profile first"{% endif %}>Accept</button>
+                </form>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4">
+              {% include "partials/empty_state.html" with icon="bi-truck" title="No pickups waiting" text="Jobs appear here once a pantry has claimed a donation. Nearby jobs are offered to you first." %}
+            </td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        </div>
+      </div>
     </div>
-    <div class="app-card">
-      <h5 class="mb-3 section-title">Recently completed</h5>
-      <ul class="list-unstyled mb-0 small">
-        {% for d in completed %}<li class="mb-1"><i class="bi bi-check-circle text-success"></i> {{ d.food_item }} — delivered {{ d.delivered_at|date:"d M" }}</li>
-        {% empty %}<li class="text-muted">No completed deliveries yet.</li>{% endfor %}
-      </ul>
+
+    <div class="dash-panel" data-dash-panel="deliveries" hidden>
+      <div class="app-card mb-4">
+        <h5 class="mb-3 section-title">Your active deliveries</h5>
+        {% for d in my_deliveries %}
+          <div class="border rounded-4 p-3 mb-2">
+            <div class="d-flex justify-content-between"><strong>{{ d.food_item }}</strong><span class="badge-status {{ d.status|status_class }}">{{ d.status }}</span></div>
+            <div class="tbl-note mb-2">{{ d.quantity_kg }} kg · {{ d.area_display }} → {{ d.recipient.display_name|default:"pantry" }}{% if d.km_leg is not None %} · {{ d.km_leg|km }}{% endif %}</div>
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+              <form method="post" class="mb-0">{% csrf_token %}<input type="hidden" name="donation_id" value="{{ d.id }}"><input type="hidden" name="action" value="delivered"><button class="btn btn-sm btn-forest" type="submit">Mark delivered</button></form>
+              <a class="msg-link" href="{% url 'inbox:conversation' d.donor_id %}"><i class="bi bi-chat-dots"></i> Donor</a>
+              {% if d.recipient_id %}<a class="msg-link" href="{% url 'inbox:conversation' d.recipient_id %}"><i class="bi bi-chat-dots"></i> Recipient</a>{% endif %}
+              <button type="button" class="btn-link-danger ms-auto" data-reason-open data-donation="{{ d.pk }}" data-action="withdraw"
+                      data-title="Hand this delivery back?" data-intro="It returns to the pool for another driver and the donor and pantry are told why." data-confirm="Withdraw">Can't deliver</button>
+            </div>
+          </div>
+        {% empty %}
+          {% include "partials/empty_state.html" with icon="bi-signpost-2" title="Nothing in progress" text="Accept a pickup and it will show here with the route length." %}
+        {% endfor %}
+      </div>
+      <div class="app-card">
+        <h5 class="mb-3 section-title">Recently completed</h5>
+        <ul class="list-unstyled mb-0 small">
+          {% for d in completed %}<li class="mb-1"><i class="bi bi-check-circle text-success"></i> {{ d.food_item }} — delivered {{ d.delivered_at|date:"d M" }}</li>
+          {% empty %}<li class="text-muted">No completed deliveries yet.</li>{% endfor %}
+        </ul>
+      </div>
     </div>
   </div>
 </div>

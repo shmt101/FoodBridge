@@ -20,8 +20,6 @@
       <div class="stat-card stat-warn"><div class="stat-value">{{ stats.expiring }}</div><div class="stat-label">Expiring within 3 hrs</div></div>
       <div class="stat-card stat-info"><div class="stat-value">{% if stats.fulfilment is not None %}{{ stats.fulfilment }}%{% else %}—{% endif %}</div><div class="stat-label">Fulfilment rate</div></div>
     </div>
-
-    {% include "partials/role_guide.html" with role="donor" %}
   </div>
 
   <div class="col-lg-9">
