@@ -146,7 +146,7 @@ html.landing-page{scroll-padding-top:0}
 .alert-warning{background:#fff8e1;border-color:#f2e0a0;color:#6b5000}
 .section-title{font-family:'Manrope',sans-serif;font-weight:800;color:var(--fb-forest);letter-spacing:-.02em}
 .table > :not(caption) > * > *{vertical-align:middle}
-.table thead th{font-size:.75rem;letter-spacing:.04em;text-transform:uppercase;color:var(--fb-muted);font-weight:700;border-bottom-color:var(--fb-line)}
+.table thead th{font-size:.74rem;letter-spacing:.05em;text-transform:uppercase;color:#2f4038;font-weight:800;border-bottom-color:var(--fb-line)}
 .btn-outline-forest{border:1.5px solid var(--fb-forest);color:var(--fb-forest);border-radius:10px;background:#fff}
 .btn-outline-forest:hover{background:var(--fb-forest);color:#fff}
 .btn-link-danger{background:none;border:0;padding:0;color:#b23b1e;font-size:.78rem;font-weight:700;cursor:pointer}
