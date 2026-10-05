@@ -2,6 +2,98 @@
 (function () {
   'use strict';
 
+  // ---- street-address autocomplete: suggests real addresses as you type ----
+  (function () {
+    var fields = document.querySelectorAll('input[name="address"], input[name="pickup_address"]');
+    if (!fields.length) return;
+
+    fields.forEach(function (input) {
+      var wrap = document.createElement('div');
+      wrap.className = 'addr-suggest-wrap';
+      input.parentNode.insertBefore(wrap, input);
+      wrap.appendChild(input);
+
+      var list = document.createElement('div');
+      list.className = 'addr-suggest-list';
+      list.hidden = true;
+      wrap.appendChild(list);
+
+      var timer = null, controller = null, items = [], active = -1;
+
+      function close() {
+        list.hidden = true;
+        list.innerHTML = '';
+        items = [];
+        active = -1;
+      }
+
+      function render(results) {
+        items = results;
+        active = -1;
+        if (!results.length) { close(); return; }
+        list.innerHTML = results.map(function (r, i) {
+          return '<button type="button" class="addr-suggest-item" data-i="' + i + '">' +
+                 '<i class="bi bi-geo-alt"></i><span>' + r.label.replace(/</g, '&lt;') + '</span></button>';
+        }).join('');
+        list.hidden = false;
+      }
+
+      function choose(i) {
+        if (!items[i]) return;
+        input.value = items[i].label;
+        close();
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      input.addEventListener('input', function () {
+        var q = input.value.trim();
+        clearTimeout(timer);
+        if (q.length < 3) { close(); return; }
+        timer = setTimeout(function () {
+          if (controller) controller.abort();
+          controller = new AbortController();
+          fetch('/accounts/address-suggest/?q=' + encodeURIComponent(q), { signal: controller.signal })
+            .then(function (r) { return r.ok ? r.json() : { results: [] }; })
+            .then(function (data) { render(data.results || []); })
+            .catch(function () {});
+        }, 350);
+      });
+
+      list.addEventListener('click', function (e) {
+        var btn = e.target.closest('.addr-suggest-item');
+        if (btn) choose(parseInt(btn.dataset.i, 10));
+      });
+
+      input.addEventListener('keydown', function (e) {
+        if (list.hidden) return;
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          active = Math.min(active + 1, items.length - 1);
+          updateActive();
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          active = Math.max(active - 1, 0);
+          updateActive();
+        } else if (e.key === 'Enter' && active >= 0) {
+          e.preventDefault();
+          choose(active);
+        } else if (e.key === 'Escape') {
+          close();
+        }
+      });
+
+      function updateActive() {
+        list.querySelectorAll('.addr-suggest-item').forEach(function (el, i) {
+          el.classList.toggle('active', i === active);
+        });
+      }
+
+      document.addEventListener('click', function (e) {
+        if (!wrap.contains(e.target)) close();
+      });
+    });
+  })();
+
   // ---- dashboard tabs: [data-dash-tab] buttons show/hide matching [data-dash-panel] ----
   document.querySelectorAll('.dash-tabs').forEach(function (tabs) {
     tabs.addEventListener('click', function (e) {

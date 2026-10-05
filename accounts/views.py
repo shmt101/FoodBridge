@@ -1,3 +1,8 @@
+import hashlib
+import json
+import urllib.parse
+import urllib.request
+
 from django.contrib import messages
 from django.contrib.auth import login
 from django.core.cache import cache
@@ -5,7 +10,9 @@ from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.db.models import Count
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_GET
 from django.views.decorators.http import require_POST
 
 from inbox import services as notes
@@ -221,3 +228,43 @@ def add_user(request):
     else:
         form = AddStaffUserForm(role_choices=choices)
     return render(request, "accounts/add_user.html", {"form": form, "can_make_admin": request.user.is_superuser})
+
+
+@require_GET
+def address_suggest(request):
+    """Proxies a street-address search to OpenStreetMap's free Nominatim geocoder, so the
+    browser never needs its own API key and we can set the User-Agent Nominatim's usage
+    policy requires. Used by the autocomplete dropdown on every street-address field."""
+    query = request.GET.get("q", "").strip()
+    if len(query) < 3:
+        return JsonResponse({"results": []})
+
+    cache_key = "addr-suggest:" + hashlib.sha1(query.lower().encode()).hexdigest()
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return JsonResponse({"results": cached})
+
+    params = urllib.parse.urlencode({
+        "format": "jsonv2", "q": query, "countrycodes": "au",
+        "limit": "5", "addressdetails": "0",
+    })
+    url = f"https://nominatim.openstreetmap.org/search?{params}"
+    results = []
+    try:
+        req = urllib.request.Request(url, headers={
+            # Nominatim's usage policy requires a real identifying User-Agent.
+            "User-Agent": "FoodBridge-StudentProject/1.0 (contact: admin@foodbridge.example)",
+        })
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        results = [
+            {"label": item.get("display_name", ""), "lat": item.get("lat"), "lon": item.get("lon")}
+            for item in data if item.get("display_name")
+        ]
+    except Exception:
+        # Network hiccup or the service being unavailable shouldn't break the form -
+        # the field still works as a plain text input, it just won't suggest anything.
+        results = []
+
+    cache.set(cache_key, results, 300)  # cache 5 min - address text rarely changes meaning
+    return JsonResponse({"results": results})

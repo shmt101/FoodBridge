@@ -1,3 +1,5 @@
+import json
+import unittest.mock as unittest_mock
 from datetime import timedelta
 from decimal import Decimal
 
@@ -949,6 +951,46 @@ class DistanceMessageAttributionTests(TestCase):
         page = self.client.get(reverse("donations:driver_dashboard"))
         self.assertContains(page, "Area not set")
         self.assertNotContains(page, "Add your area")
+
+
+class AddressSuggestTests(TestCase):
+    """The autocomplete endpoint proxies to Nominatim server-side - test it with the
+    network call mocked out, so these tests never depend on real internet access."""
+
+    def test_short_query_returns_empty_without_calling_out(self):
+        with unittest_mock.patch("urllib.request.urlopen") as mocked:
+            resp = self.client.get(reverse("accounts:address_suggest"), {"q": "ab"})
+            self.assertEqual(resp.json(), {"results": []})
+            mocked.assert_not_called()
+
+    def test_real_query_returns_parsed_results(self):
+        fake_payload = json.dumps([
+            {"display_name": "10 Sansom St, Kariong NSW 2250, Australia"},
+            {"display_name": "12 Sansom St, Kariong NSW 2250, Australia"},
+        ]).encode()
+
+        class FakeResponse:
+            def __enter__(self): return self
+            def __exit__(self, *a): return False
+            def read(self): return fake_payload
+
+        with unittest_mock.patch("urllib.request.urlopen", return_value=FakeResponse()):
+            resp = self.client.get(reverse("accounts:address_suggest"), {"q": "10 sansom street a"})
+        data = resp.json()
+        self.assertEqual(len(data["results"]), 2)
+        self.assertIn("Sansom St", data["results"][0]["label"])
+
+    def test_network_failure_degrades_to_empty_results_not_an_error(self):
+        with unittest_mock.patch("urllib.request.urlopen", side_effect=OSError("boom")):
+            resp = self.client.get(reverse("accounts:address_suggest"), {"q": "10 sansom street b"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json(), {"results": []})
+
+    def test_works_without_being_logged_in_since_signup_needs_it(self):
+        with unittest_mock.patch("urllib.request.urlopen") as mocked:
+            mocked.return_value.__enter__.return_value.read.return_value = b"[]"
+            resp = self.client.get(reverse("accounts:address_suggest"), {"q": "10 sansom street c"})
+        self.assertEqual(resp.status_code, 200)
 
 
 class AdminFormAreaValidationTests(TestCase):

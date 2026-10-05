@@ -15,6 +15,7 @@ urlpatterns = [
     path("approvals/", views.approvals_queue, name="approvals"),
     path("manage/", views.manage_users, name="manage_users"),
     path("manage/add/", views.add_user, name="add_user"),
+    path("address-suggest/", views.address_suggest, name="address_suggest"),
     # password reset (emails a one-time link; console backend prints it until SMTP is configured)
     path("password-reset/", auth_views.PasswordResetView.as_view(
         template_name="accounts/password_reset.html",
