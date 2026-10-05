@@ -920,6 +920,70 @@ class MapAndSmokeTests(TestCase):
         self.assertEqual(before, (User.objects.count(), Donation.objects.count()))
 
 
+class DistanceMessageAttributionTests(TestCase):
+    """When a distance can't be shown, the message should blame whichever side is
+    actually missing an area - not always assume it's the driver's own profile."""
+
+    def setUp(self):
+        self.donor = make_user("corner", User.Role.DONOR, area="nsw-parramatta", address="1 A St")
+        self.pantry = make_user("pantry", User.Role.RECIPIENT, area="nsw-auburn", address="2 B St")
+
+    def test_shows_add_your_area_when_the_driver_has_none(self):
+        driver = make_user("nodriverarea", User.Role.DRIVER, address="3 C St")  # no area
+        d = make_donation(self.donor, pickup_area="nsw-parramatta")
+        workflow.claim(d.pk, self.pantry)
+        Donation.objects.filter(pk=d.pk).update(driver_pool_open=True)
+        self.client.login(username="nodriverarea", password=PW)
+        page = self.client.get(reverse("donations:driver_dashboard"))
+        self.assertContains(page, "Add your area")
+        self.assertNotContains(page, ">Area not set<")
+
+    def test_shows_area_not_set_when_the_listing_itself_has_no_resolvable_area(self):
+        driver = make_user("readydriver", User.Role.DRIVER, area="nsw-homebush", address="3 C St")
+        # pickup_area left blank, and the donor's own area is also blank -> unresolvable
+        blank_donor = make_user("blankdonor", User.Role.DONOR, address="9 Z St")
+        d = make_donation(blank_donor, pickup_area="")
+        workflow.claim(d.pk, self.pantry)
+        Donation.objects.filter(pk=d.pk).update(driver_pool_open=True)
+        self.client.login(username="readydriver", password=PW)
+        page = self.client.get(reverse("donations:driver_dashboard"))
+        self.assertContains(page, "Area not set")
+        self.assertNotContains(page, "Add your area")
+
+
+class AdminFormAreaValidationTests(TestCase):
+    """Django admin's area fields must use the same restricted choices as the public
+    forms, so a typed-in value can never silently break distance matching."""
+
+    def setUp(self):
+        self.superuser = User.objects.create_superuser("root", "root@example.com", PW)
+        self.client.login(username="root", password=PW)
+
+    def test_donation_admin_rejects_a_free_text_area(self):
+        donor = make_user("donor", User.Role.DONOR)
+        d = make_donation(donor, pickup_area="nsw-parramatta")
+        resp = self.client.post(
+            f"/admin/donations/donation/{d.pk}/change/",
+            {
+                "donor": donor.pk, "food_item": "Bread", "quantity_kg": "5",
+                "food_category": "other", "storage": "ambient", "date_type": "use_by",
+                "pickup_area": "mosman", "pickup_address": "x", "status": "Pending",
+                "recipient_pool_open": "on", "driver_pool_open": "on",
+                "offers-TOTAL_FORMS": "0", "offers-INITIAL_FORMS": "0",
+                "donationevent_set-TOTAL_FORMS": "0", "donationevent_set-INITIAL_FORMS": "0",
+            },
+        )
+        self.assertContains(resp, "Select a valid choice")
+        self.assertEqual(Donation.objects.get(pk=d.pk).pickup_area, "nsw-parramatta")
+
+    def test_user_admin_rejects_a_free_text_area(self):
+        donor = make_user("donor2", User.Role.DONOR, area="nsw-parramatta")
+        resp = self.client.get(f"/admin/accounts/user/{donor.pk}/change/")
+        self.assertContains(resp, 'name="area"')
+        html = resp.content.decode()
+        self.assertIn("<select", html[html.index('name="area"') - 200:html.index('name="area"') + 50])
+
+
 class SignupRoleCardTests(TestCase):
     def test_each_role_card_gets_its_own_icon_and_description(self):
         html = self.client.get(reverse("accounts:signup")).content.decode()

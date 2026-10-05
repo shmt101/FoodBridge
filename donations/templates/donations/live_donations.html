@@ -10,16 +10,16 @@
 
 <form method="get" class="filter-bar">
   <div class="row g-2 align-items-end">
-    <div class="col-md-4"><label class="form-label small fw-semibold mb-1">Search</label>{{ form.q }}</div>
-    <div class="col-md-2"><label class="form-label small fw-semibold mb-1">State</label>{{ form.state }}</div>
-    <div class="col-md-3"><label class="form-label small fw-semibold mb-1"><i class="bi bi-geo-alt"></i> I'm in / near</label>{{ form.area }}</div>
-    <div class="col-md-2"><label class="form-label small fw-semibold mb-1">Distance</label>{{ form.radius }}</div>
-    <div class="col-md-3"><label class="form-label small fw-semibold mb-1">Status</label>{{ form.status }}</div>
-    <div class="col-md-2"><button class="btn btn-forest w-100" type="submit"><i class="bi bi-funnel"></i> Filter</button></div>
-    <div class="col-md-3">
-      {% if my_area %}<a class="btn-link-quiet" href="?area={{ my_area }}"><i class="bi bi-crosshair"></i> Use my area</a>{% endif %}
-      <a class="btn-link-quiet ms-2" href="{% url 'donations:live' %}">Clear</a>
-    </div>
+    <div class="col-6 col-md-3"><label class="form-label small fw-semibold mb-1">Search</label>{{ form.q }}</div>
+    <div class="col-6 col-md-2"><label class="form-label small fw-semibold mb-1">State</label>{{ form.state }}</div>
+    <div class="col-6 col-md-3"><label class="form-label small fw-semibold mb-1"><i class="bi bi-geo-alt"></i> I'm in / near</label>{{ form.area }}</div>
+    <div class="col-6 col-md-2"><label class="form-label small fw-semibold mb-1">Distance</label>{{ form.radius }}</div>
+    <div class="col-6 col-md-2"><label class="form-label small fw-semibold mb-1">Status</label>{{ form.status }}</div>
+  </div>
+  <div class="d-flex align-items-center flex-wrap gap-3 mt-2">
+    <button class="btn btn-sm btn-forest" type="submit"><i class="bi bi-funnel"></i> Filter</button>
+    {% if my_area %}<a class="btn-link-quiet" href="?area={{ my_area }}"><i class="bi bi-crosshair"></i> Use my area</a>{% endif %}
+    <a class="btn-link-quiet" href="{% url 'donations:live' %}">Clear</a>
   </div>
 </form>
 

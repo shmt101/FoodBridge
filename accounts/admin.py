@@ -1,12 +1,27 @@
+from django import forms
 from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.forms import UserChangeForm
 
+from .areas import area_choices
 from . import approvals
 from .models import User
 
 
+class UserAdminForm(UserChangeForm):
+    """Keeps area restricted to a real area code - the plain CharField has no choices of
+    its own, so without this, admin could type free text here that never matches a real
+    area, silently breaking distance-based matching for that person."""
+
+    area = forms.ChoiceField(choices=area_choices("No area set"), required=False)
+
+    class Meta(UserChangeForm.Meta):
+        model = User
+
+
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
+    form = UserAdminForm
     list_display = ("username", "email", "role", "approval_status", "area", "is_staff", "date_joined")
     list_filter = ("role", "approval_status", "is_staff", "is_active")
     actions = ["approve_selected", "reject_selected"]

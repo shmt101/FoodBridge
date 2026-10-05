@@ -109,7 +109,8 @@
                 {% if d.km_to_pickup is not None %}
                   <span class="chip {{ d.km_to_pickup|dist_class }}"><i class="bi bi-geo-alt"></i> {{ d.km_to_pickup|km }}</span>
                   {% if d.km_leg is not None %}<div class="tbl-note mt-1">+ {{ d.km_leg|km }} delivery · {{ d.km_total|km }} total</div>{% endif %}
-                {% else %}<span class="chip dist-unknown">Add your area</span>{% endif %}
+                {% elif not user.area %}<span class="chip dist-unknown" title="We can't rank distance until your profile has an area">Add your area</span>
+                {% else %}<span class="chip dist-unknown" title="This listing's pickup area isn't set, so distance can't be calculated">Area not set</span>{% endif %}
               </td>
               <td class="text-nowrap">
                 <a class="msg-link d-block mb-1" href="{% url 'inbox:conversation' d.donor_id %}"><i class="bi bi-chat-dots"></i> Donor</a>
