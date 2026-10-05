@@ -27,7 +27,7 @@
   {% for u in users %}
     <tr>
       <td><strong>{{ u.display_name }}</strong>{% if not u.is_active %} <span class="chip dist-far">Deactivated</span>{% endif %}<br><span class="tbl-note">@{{ u.username }} · {{ u.email|default:"no email" }}</span></td>
-      <td>{{ u.get_role_display }}{% if u.is_superuser %} <span class="chip">superuser</span>{% endif %}</td>
+      <td>{% if u.is_auditor %}Auditor{% elif u.is_admin_role %}Admin{% else %}{{ u.get_role_display }}{% endif %}{% if u.is_superuser %} <span class="chip">superuser</span>{% endif %}</td>
       <td><span class="chip {% if u.approval_status == 'approved' %}dist-near{% elif u.approval_status == 'pending' %}dist-mid{% else %}dist-far{% endif %}">{{ u.get_approval_status_display }}</span></td>
       <td class="text-nowrap">{{ u.date_joined|date:"d M Y" }}</td>
       <td style="min-width:290px">

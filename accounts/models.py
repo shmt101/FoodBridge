@@ -94,13 +94,27 @@ class User(AbstractUser):
         return area_label(self.area)
 
     def save(self, *args, **kwargs):
+        extra_fields = set()
+        # Staff/superuser accounts are functionally Admins everywhere in the app (see
+        # is_admin_role()) regardless of how they were created - Django's own /admin/,
+        # createsuperuser, or our in-app flows. Without this, an account made outside our
+        # "Add User" form keeps whatever role it defaulted to (Donor) while acting as an
+        # Admin everywhere else, which is exactly the confusing state this prevents.
+        # Auditor is left alone - it's a deliberate separate role, not an "unset" one.
+        if (self.is_superuser or self.is_staff) and self.role in (
+                self.Role.DONOR, self.Role.RECIPIENT, self.Role.DRIVER):
+            self.role = self.Role.ADMIN
+            extra_fields.add("role")
+
         # Admins / staff never wait in the approval queue.
         if (self.is_superuser or self.is_staff or self.role in (self.Role.ADMIN, self.Role.AUDITOR)) \
                 and self.approval_status != self.Approval.APPROVED:
             self.approval_status = self.Approval.APPROVED
             self.approved_at = self.approved_at or timezone.now()
-            if kwargs.get("update_fields") is not None:
-                kwargs["update_fields"] = set(kwargs["update_fields"]) | {"approval_status", "approved_at"}
+            extra_fields |= {"approval_status", "approved_at"}
+
+        if extra_fields and kwargs.get("update_fields") is not None:
+            kwargs["update_fields"] = set(kwargs["update_fields"]) | extra_fields
         super().save(*args, **kwargs)
 
     @property

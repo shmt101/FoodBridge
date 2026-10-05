@@ -1046,6 +1046,56 @@ class SignupRoleCardTests(TestCase):
         self.assertNotIn('value="ADMIN"', html)
 
 
+class StaffRoleSyncTests(TestCase):
+    """is_staff/is_superuser makes someone a functional Admin everywhere in the app - the
+    underlying role field must never be allowed to drift from that, however the account
+    was created (our own forms, Django admin, createsuperuser)."""
+
+    def test_granting_staff_to_a_default_role_account_promotes_role_to_admin(self):
+        u = User.objects.create_user("promoted", password=PW, role=User.Role.DONOR)
+        self.assertEqual(u.role, User.Role.DONOR)
+        u.is_staff = True
+        u.save()
+        u.refresh_from_db()
+        self.assertEqual(u.role, User.Role.ADMIN)
+
+    def test_superuser_creation_also_gets_role_admin(self):
+        u = User.objects.create_superuser("rootuser", "root@example.com", PW)
+        self.assertEqual(u.role, User.Role.ADMIN)
+
+    def test_auditor_role_is_left_alone_even_if_also_staff(self):
+        u = User.objects.create_user("weirdcase", password=PW, role=User.Role.AUDITOR)
+        u.is_staff = True
+        u.save()
+        u.refresh_from_db()
+        self.assertEqual(u.role, User.Role.AUDITOR)
+
+    def test_profile_page_shows_admin_not_the_stale_role_field(self):
+        # simulate an account created outside our app (e.g. Django admin) before the
+        # migration/save-hook existed - directly write a stale DB row
+        User.objects.filter(pk=User.objects.create_user(
+            "staleadmin", password=PW, role=User.Role.DONOR).pk
+        ).update(is_staff=True, role=User.Role.DONOR)  # bypass save() to simulate old drift
+        self.client.login(username="staleadmin", password=PW)
+        page = self.client.get(reverse("accounts:profile"))
+        self.assertContains(page, "Role: <strong>Admin</strong>")
+        self.assertNotContains(page, "Role: <strong>Donor</strong>")
+
+    def test_manage_users_table_shows_admin_not_the_stale_role_field(self):
+        boss = User.objects.create_user("boss2", password=PW, role="ADMIN", is_staff=True)
+        User.objects.filter(pk=User.objects.create_user(
+            "staleadmin2", password=PW, role=User.Role.DONOR).pk
+        ).update(is_staff=True, role=User.Role.DONOR)
+        self.client.login(username="boss2", password=PW)
+        page = self.client.get(reverse("accounts:manage_users"))
+        self.assertContains(page, "staleadmin2")
+        # the row for staleadmin2 should say Admin, not Donor
+        html = page.content.decode()
+        row_start = html.index("staleadmin2")
+        row = html[row_start:row_start + 400]
+        self.assertIn("Admin", row)
+
+
 class AdminAuditorSplitTests(TestCase):
     def setUp(self):
         self.admin = User.objects.create_user("boss", password=PW, role="ADMIN", is_staff=True)

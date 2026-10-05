@@ -7,7 +7,7 @@
       <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
         <div>
           <h2 class="section-title mb-1">Your profile</h2>
-          <p class="text-muted small mb-0">Role: <strong>{{ user.get_role_display }}</strong> (contact an admin to change this)</p>
+          <p class="text-muted small mb-0">Role: <strong>{% if user.is_auditor %}Auditor{% elif user.is_admin_role %}Admin{% else %}{{ user.get_role_display }}{% endif %}</strong> (contact an admin to change this)</p>
         </div>
         {% if user.is_approved %}<span class="chip dist-near"><i class="bi bi-patch-check-fill"></i> Approved</span>
         {% elif user.is_rejected %}<span class="chip dist-far"><i class="bi bi-x-circle-fill"></i> Not approved</span>
