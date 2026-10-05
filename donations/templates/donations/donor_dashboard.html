@@ -21,35 +21,44 @@
   <div class="col-6 col-md-3"><div class="stat-card stat-info"><div class="stat-value">{% if stats.fulfilment is not None %}{{ stats.fulfilment }}%{% else %}—{% endif %}</div><div class="stat-label">Fulfilment rate</div></div></div>
 </div>
 
+<div class="dash-tabs mb-3" role="tablist">
+  <button type="button" class="dash-tab{% if not form.errors %} active{% endif %}" data-dash-tab="list" role="tab" aria-selected="{% if not form.errors %}true{% else %}false{% endif %}">
+    <i class="bi bi-list-ul"></i> My donations <span class="chip chip-soft ms-1">{{ donations|length }}</span>
+  </button>
+  <button type="button" class="dash-tab{% if form.errors %} active{% endif %}" data-dash-tab="form" role="tab" aria-selected="{% if form.errors %}true{% else %}false{% endif %}">
+    <i class="bi bi-plus-circle"></i> List new donation
+  </button>
+</div>
+
 <div class="row g-4">
-  <div class="col-lg-5">
+  <div class="col-12 dash-panel" data-dash-panel="form"{% if not form.errors %} hidden{% endif %}>
     <div class="app-card">
       <h5 class="mb-1 section-title">List new surplus food</h5>
-      <p class="tbl-note mb-3">The nearest pantries are offered it first; if they don't respond in time it opens up to more.</p>
+      <p class="tbl-note mb-4">The nearest pantries are offered it first; if they don't respond in time it opens up to more.</p>
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="action" value="list">
-        <div class="mb-3"><label class="form-label">Food item</label>{{ form.food_item }}{% for e in form.food_item.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
-        <div class="row g-2">
-          <div class="col-6 mb-3"><label class="form-label">Category</label>{{ form.food_category }}</div>
-          <div class="col-6 mb-3"><label class="form-label">Quantity (kg)</label>{{ form.quantity_kg }}{% for e in form.quantity_kg.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
-          <div class="col-6 mb-3"><label class="form-label">Storage</label>{{ form.storage }}</div>
-          <div class="col-6 mb-3"><label class="form-label">Date on the food</label>{{ form.date_type }}</div>
+        <div class="row g-3">
+          <div class="col-md-8 mb-1"><label class="form-label">Food item</label>{{ form.food_item }}{% for e in form.food_item.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+          <div class="col-md-4 mb-1"><label class="form-label">Quantity (kg)</label>{{ form.quantity_kg }}{% for e in form.quantity_kg.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+          <div class="col-md-4 mb-1"><label class="form-label">Category</label>{{ form.food_category }}</div>
+          <div class="col-md-4 mb-1"><label class="form-label">Storage</label>{{ form.storage }}</div>
+          <div class="col-md-4 mb-1"><label class="form-label">Date on the food</label>{{ form.date_type }}</div>
+          <div class="col-md-6 mb-1"><label class="form-label">Allergens <span class="text-muted small">(optional)</span></label>{{ form.allergen_note }}</div>
+          <div class="col-md-6 mb-1"><label class="form-label">Pickup area</label>{{ form.pickup_area }}{% for e in form.pickup_area.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+          <div class="col-md-6 mb-1"><label class="form-label">Pickup address</label>{{ form.pickup_address }}{% for e in form.pickup_address.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+          <div class="col-md-6 mb-1"><label class="form-label">{{ form.expires_at.label }}</label>{{ form.expires_at }}
+            <div class="tbl-note mt-1">{{ form.expires_at.help_text }}</div>
+            {% for e in form.expires_at.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
+          <div class="col-12 mb-1"><label class="form-label">Notes</label>{{ form.notes }}</div>
         </div>
-        <div class="mb-3"><label class="form-label">Allergens <span class="text-muted small">(optional)</span></label>{{ form.allergen_note }}</div>
-        <div class="mb-3"><label class="form-label">Pickup area</label>{{ form.pickup_area }}{% for e in form.pickup_area.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
-        <div class="mb-3"><label class="form-label">Pickup address</label>{{ form.pickup_address }}{% for e in form.pickup_address.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
-        <div class="mb-3"><label class="form-label">{{ form.expires_at.label }}</label>{{ form.expires_at }}
-          <div class="tbl-note mt-1">{{ form.expires_at.help_text }}</div>
-          {% for e in form.expires_at.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
-        <div class="mb-3"><label class="form-label">Notes</label>{{ form.notes }}</div>
-        <div class="form-check mb-3">{{ form.safety_confirmed }}<label class="form-check-label small" for="{{ form.safety_confirmed.id_for_label }}">{{ form.safety_confirmed.label }}</label>
+        <div class="form-check my-3">{{ form.safety_confirmed }}<label class="form-check-label small" for="{{ form.safety_confirmed.id_for_label }}">{{ form.safety_confirmed.label }}</label>
           {% for e in form.safety_confirmed.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
         <button class="btn btn-forest" type="submit">List donation</button>
       </form>
     </div>
   </div>
-  <div class="col-lg-7">
+  <div class="col-12 dash-panel" data-dash-panel="list"{% if form.errors %} hidden{% endif %}>
     <div class="app-card">
       <h5 class="mb-3 section-title">Your donations ({{ donations|length }})</h5>
       <div class="table-responsive">

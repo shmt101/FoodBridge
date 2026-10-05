@@ -391,6 +391,22 @@ class DashboardViewTests(TestCase):
         self.client.login(username=username, password=PW)
         return self.client.post(reverse(url), data, follow=True)
 
+    def test_donor_dashboard_has_tabs_defaulting_to_the_list_and_switching_on_errors(self):
+        self.client.login(username="donor", password=PW)
+        page = self.client.get(reverse("donations:donor_dashboard"))
+        self.assertContains(page, 'data-dash-tab="list"')
+        self.assertContains(page, 'data-dash-tab="form"')
+        self.assertContains(page, 'data-dash-panel="list"')
+        self.assertNotContains(page, 'data-dash-panel="list" hidden')
+        self.assertContains(page, 'data-dash-panel="form" hidden')
+        # invalid submission re-renders with the form tab active instead of the list
+        bad = self.post("donor", "donations:donor_dashboard", {
+            "food_item": "", "quantity_kg": "8", "pickup_area": "nsw-parramatta",
+            "pickup_address": "1 Church St", "expires_at": "", "notes": "", "safety_confirmed": "on",
+            "food_category": "bakery", "storage": "ambient", "date_type": "use_by"})
+        self.assertNotContains(bad, 'data-dash-panel="form" hidden')
+        self.assertContains(bad, 'data-dash-panel="list" hidden')
+
     def test_donor_lists_with_expiry_area_and_gets_offers_created(self):
         exp = (timezone.localtime() + timedelta(hours=6)).strftime("%Y-%m-%dT%H:%M")
         resp = self.post("donor", "donations:donor_dashboard", {

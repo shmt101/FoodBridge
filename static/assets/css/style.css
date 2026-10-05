@@ -406,6 +406,14 @@ dialog.fb-dialog .dlg-close{background:none;border:0;font-size:1.3rem;color:var(
 /* ---- hero panels used on dashboards ---- */
 .dash-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
 .dash-actions{display:flex;gap:8px;flex-wrap:wrap}
+.dash-tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.dash-tab{display:inline-flex;align-items:center;gap:7px;background:none;border:0;border-bottom:3px solid transparent;
+  padding:10px 4px;margin-bottom:-1px;font-weight:700;font-size:.92rem;color:var(--muted);cursor:pointer;transition:color .15s ease}
+.dash-tab + .dash-tab{margin-left:14px}
+.dash-tab:hover{color:var(--forest)}
+.dash-tab.active{color:var(--forest);border-bottom-color:var(--green)}
+.dash-tab i{font-size:1rem}
+
 .readiness{display:flex;gap:8px;align-items:center;font-size:.85rem}
 .tbl-note{font-size:.76rem;color:var(--fb-muted)}
 .filter-bar{background:#fff;border:1px solid var(--fb-line);border-radius:18px;padding:14px 16px;margin-bottom:1.25rem}

@@ -2,6 +2,23 @@
 (function () {
   'use strict';
 
+  // ---- dashboard tabs: [data-dash-tab] buttons show/hide matching [data-dash-panel] ----
+  document.querySelectorAll('.dash-tabs').forEach(function (tabs) {
+    tabs.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-dash-tab]');
+      if (!btn) return;
+      var name = btn.getAttribute('data-dash-tab');
+      tabs.querySelectorAll('[data-dash-tab]').forEach(function (b) {
+        var on = b === btn;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      document.querySelectorAll('[data-dash-panel]').forEach(function (p) {
+        p.hidden = p.getAttribute('data-dash-panel') !== name;
+      });
+    });
+  });
+
   // ---- mobile nav toggle ----
   var navToggle = document.querySelector('[data-nav-toggle]');
   var navLinks = document.getElementById('navLinks');
