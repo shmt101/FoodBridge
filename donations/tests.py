@@ -922,6 +922,71 @@ class MapAndSmokeTests(TestCase):
         self.assertEqual(before, (User.objects.count(), Donation.objects.count()))
 
 
+def make_test_image(name="photo.jpg", size_kb=10):
+    """A real, tiny but valid JPEG - Django's ImageField validates actual image content,
+    not just a file extension, so random bytes won't pass."""
+    from io import BytesIO
+    from PIL import Image
+    buf = BytesIO()
+    Image.new("RGB", (40, 40), color=(100, 180, 120)).save(buf, format="JPEG")
+    content = buf.getvalue()
+    if size_kb:
+        content += b"0" * (size_kb * 1024 - len(content)) if len(content) < size_kb * 1024 else content
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    return SimpleUploadedFile(name, content, content_type="image/jpeg")
+
+
+class DonationPhotoTests(TestCase):
+    def setUp(self):
+        self.donor = make_user("photodonor", User.Role.DONOR, area="nsw-parramatta", address="1 A St")
+
+    def test_donor_can_upload_a_photo_when_listing(self):
+        self.client.login(username="photodonor", password=PW)
+        resp = self.client.post(reverse("donations:donor_dashboard"), {
+            "action": "list", "food_item": "Bread", "quantity_kg": "5", "food_category": "bakery",
+            "storage": "ambient", "date_type": "use_by", "pickup_area": "nsw-parramatta",
+            "pickup_address": "1 A St", "expires_at": (timezone.now() + timedelta(hours=20)).strftime("%Y-%m-%dT%H:%M"),
+            "notes": "", "safety_confirmed": "on", "photo": make_test_image(),
+        })
+        self.assertEqual(resp.status_code, 302)
+        d = Donation.objects.get(food_item="Bread")
+        self.assertTrue(d.photo)
+        self.assertIn("donation_photos/", d.photo.name)
+
+    def test_photo_is_optional(self):
+        self.client.login(username="photodonor", password=PW)
+        resp = self.client.post(reverse("donations:donor_dashboard"), {
+            "action": "list", "food_item": "Rice", "quantity_kg": "5", "food_category": "packaged",
+            "storage": "ambient", "date_type": "use_by", "pickup_area": "nsw-parramatta",
+            "pickup_address": "1 A St", "expires_at": (timezone.now() + timedelta(hours=20)).strftime("%Y-%m-%dT%H:%M"),
+            "notes": "", "safety_confirmed": "on",
+        })
+        self.assertEqual(resp.status_code, 302)
+        d = Donation.objects.get(food_item="Rice")
+        self.assertFalse(d.photo)
+
+    def test_oversized_photo_is_rejected(self):
+        self.client.login(username="photodonor", password=PW)
+        big = make_test_image(size_kb=5 * 1024 + 100)  # just over 5MB
+        resp = self.client.post(reverse("donations:donor_dashboard"), {
+            "action": "list", "food_item": "Too big", "quantity_kg": "5", "food_category": "bakery",
+            "storage": "ambient", "date_type": "use_by", "pickup_area": "nsw-parramatta",
+            "pickup_address": "1 A St", "expires_at": (timezone.now() + timedelta(hours=20)).strftime("%Y-%m-%dT%H:%M"),
+            "notes": "", "safety_confirmed": "on", "photo": big,
+        })
+        self.assertContains(resp, "too large")
+        self.assertFalse(Donation.objects.filter(food_item="Too big").exists())
+
+    def test_uploaded_photo_shows_on_the_detail_page(self):
+        d = make_donation(self.donor, food_item="Bread")
+        d.photo = make_test_image()
+        d.save()
+        self.client.login(username="photodonor", password=PW)
+        page = self.client.get(reverse("donations:detail", args=[d.pk]))
+        self.assertContains(page, "donation-photo-full")
+        self.assertContains(page, d.photo.url)
+
+
 class DistanceMessageAttributionTests(TestCase):
     """When a distance can't be shown, the message should blame whichever side is
     actually missing an area - not always assume it's the driver's own profile."""

@@ -14,10 +14,17 @@ RECIPIENT_RELEASE_REASONS = ["cant_collect", "no_storage", "not_needed", "other"
 DRIVER_WITHDRAW_REASONS = ["vehicle", "too_far", "schedule", "other"]
 
 
+def validate_photo_size(f):
+    if f and f.size > 5 * 1024 * 1024:
+        raise forms.ValidationError("Photo is too large - please use one under 5 MB.")
+
+
 class DonationForm(forms.ModelForm):
     """Used by donors to list a new surplus food donation (with an expiry time)."""
 
     pickup_area = forms.ChoiceField(choices=area_choices("Select pickup area…"), label="Pickup area")
+    photo = forms.ImageField(required=False, label="Photo (optional)", validators=[validate_photo_size],
+                             help_text="A real photo of the food - it'll show on the listing and may be featured on the Home page.")
     expires_at = forms.DateTimeField(
         label="Expires / best before",
         input_formats=[DT_LOCAL, "%Y-%m-%d %H:%M"],
@@ -33,7 +40,7 @@ class DonationForm(forms.ModelForm):
     class Meta:
         model = Donation
         fields = ["food_item", "food_category", "quantity_kg", "storage", "date_type", "allergen_note",
-                  "pickup_area", "pickup_address", "expires_at", "notes", "safety_confirmed"]
+                  "photo", "pickup_area", "pickup_address", "expires_at", "notes", "safety_confirmed"]
         labels = {"food_category": "Category", "storage": "Storage", "date_type": "Date on the food",
                   "allergen_note": "Allergens (optional)"}
         widgets = {"notes": forms.Textarea(attrs={"rows": 2}),

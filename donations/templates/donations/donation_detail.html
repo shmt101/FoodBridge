@@ -10,6 +10,7 @@
         <h3 class="section-title mb-0">{{ d.food_item }}</h3>
         <span class="badge-status {{ d.status|status_class }}">{{ d.status }}</span>
       </div>
+      {% if d.photo %}<img src="{{ d.photo.url }}" alt="Photo of {{ d.food_item }}" class="donation-photo-full mb-3">{% endif %}
       <p class="text-muted mb-2">{{ d.quantity_kg }} kg from {{ d.donor_name }}</p>
       <div class="mb-3">{% include "partials/food_chips.html" %}
         <span class="chip chip-soft">{{ d.get_date_type_display }} date</span>

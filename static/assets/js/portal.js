@@ -127,12 +127,18 @@
     var idx = 0;
     function show(i) {
       var c = cards[i];
-      tile.style.background = c.gradient;
+      if (c.photo) {
+        tile.style.background =
+          'linear-gradient(0deg, rgba(7,59,42,.78), rgba(7,59,42,.15) 55%), url("' + c.photo + '") center/cover no-repeat';
+      } else {
+        tile.style.background = c.gradient;
+      }
       icon.classList.add('swap');
       label.style.opacity = 0;
       count.style.opacity = 0;
       setTimeout(function () {
-        icon.innerHTML = '<i class="bi ' + c.icon + '"></i>';
+        icon.innerHTML = c.photo ? '' : '<i class="bi ' + c.icon + '"></i>';
+        icon.classList.toggle('d-none', !!c.photo);
         label.textContent = c.label;
         count.textContent = c.count + ' item' + (c.count === 1 ? '' : 's') + ' available now';
         link.href = liveUrl + '?category=' + encodeURIComponent(c.key);

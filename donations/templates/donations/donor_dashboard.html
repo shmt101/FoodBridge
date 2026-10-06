@@ -36,7 +36,7 @@
       <div class="app-card">
         <h5 class="mb-1 section-title">List new surplus food</h5>
         <p class="tbl-note mb-4">The nearest pantries are offered it first; if they don't respond in time it opens up to more.</p>
-        <form method="post">
+        <form method="post" enctype="multipart/form-data">
           {% csrf_token %}
           <input type="hidden" name="action" value="list">
           <div class="row g-3">
@@ -46,6 +46,9 @@
             <div class="col-md-4 mb-1"><label class="form-label">Storage</label>{{ form.storage }}</div>
             <div class="col-md-4 mb-1"><label class="form-label">Date on the food</label>{{ form.date_type }}</div>
             <div class="col-md-6 mb-1"><label class="form-label">Allergens <span class="text-muted small">(optional)</span></label>{{ form.allergen_note }}</div>
+            <div class="col-md-6 mb-1"><label class="form-label">{{ form.photo.label }}</label>{{ form.photo }}
+              <div class="tbl-note mt-1">{{ form.photo.help_text }}</div>
+              {% for e in form.photo.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
             <div class="col-md-6 mb-1"><label class="form-label">Pickup area</label>{{ form.pickup_area }}{% for e in form.pickup_area.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
             <div class="col-md-6 mb-1"><label class="form-label">Pickup address</label>{{ form.pickup_address }}{% for e in form.pickup_address.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
             <div class="col-md-6 mb-1"><label class="form-label">{{ form.expires_at.label }}</label>{{ form.expires_at }}
@@ -69,8 +72,11 @@
           <tbody>
           {% for d in donations %}
             <tr>
-              <td><strong>{{ d.food_item }}</strong> <span class="text-muted">· {{ d.quantity_kg }} kg</span><br>
-                <span class="chip chip-soft"><i class="bi bi-geo-alt"></i> {{ d.area_display|default:"No area" }}</span> {% include "partials/food_chips.html" %}</td>
+              <td class="d-flex gap-2 align-items-start">
+                {% if d.photo %}<img src="{{ d.photo.url }}" alt="" class="donation-thumb">{% endif %}
+                <div><strong>{{ d.food_item }}</strong> <span class="text-muted">· {{ d.quantity_kg }} kg</span><br>
+                <span class="chip chip-soft"><i class="bi bi-geo-alt"></i> {{ d.area_display|default:"No area" }}</span> {% include "partials/food_chips.html" %}</div>
+              </td>
               <td><span class="badge-status {{ d.status|status_class }}">{{ d.status }}</span>
                 {% if d.status == 'Cancelled' and d.cancel_reason %}<div class="tbl-note mt-1">{{ d.get_cancel_reason_display }}</div>{% endif %}</td>
               <td class="text-nowrap">

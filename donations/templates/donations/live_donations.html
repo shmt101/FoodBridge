@@ -38,7 +38,10 @@
     <tbody>
     {% for d in donations %}
       <tr>
-        <td><strong>{{ d.food_item }}</strong><br>{% include "partials/food_chips.html" %}</td>
+        <td class="d-flex gap-2 align-items-start">
+          {% if d.photo %}<img src="{{ d.photo.url }}" alt="" class="donation-thumb">{% endif %}
+          <div><strong>{{ d.food_item }}</strong><br>{% include "partials/food_chips.html" %}</div>
+        </td>
         <td class="text-end">{{ d.quantity_kg }} kg</td>
         <td>{{ d.donor_name }}</td>
         <td>{{ d.area_display|default:"—" }}</td>

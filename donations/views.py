@@ -215,7 +215,7 @@ def donor_dashboard(request):
             _reason_response(request, DONOR_CANCEL_REASONS, workflow.cancel_listing,
                              request.POST.get("donation_id"), "Listing cancelled. Everyone involved has been told why.")
             return redirect("donations:donor_dashboard")
-        form = DonationForm(request.POST)
+        form = DonationForm(request.POST, request.FILES)
         if form.is_valid():
             donation = form.save(commit=False)
             donation.donor = request.user

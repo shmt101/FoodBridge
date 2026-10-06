@@ -111,6 +111,8 @@ html.landing-page{scroll-padding-top:0}
 .showcase-eyebrow span{width:6px;height:6px;border-radius:50%;background:#fff}
 .showcase-title{position:absolute;top:3.6rem;left:2.1rem;right:2.1rem;z-index:2;color:#fff;
   font-family:'Manrope',sans-serif;font-weight:800;font-size:1.3rem;line-height:1.3}
+.donation-thumb{width:52px;height:52px;border-radius:10px;object-fit:cover;flex:0 0 auto;border:1px solid var(--fb-line)}
+.donation-photo-full{width:100%;max-height:260px;object-fit:cover;border-radius:16px;display:block}
 @media(max-width:900px){.showcase-wrap{grid-template-columns:1fr}.showcase-copy p{max-width:none}.showcase-box{min-height:260px}}
 .hero-legal-links{margin:.6rem 0 0;font-size:.82rem;color:var(--fb-muted)}
 .hero-legal-links a{color:var(--fb-muted);text-decoration:underline}

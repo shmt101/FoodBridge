@@ -326,6 +326,29 @@ class PublicPagesTests(TestCase):
         self.assertNotIn('id="team"', html)
         self.assertEqual(self.client.get(reverse("about")).status_code, 200)
 
+    def test_showcase_box_uses_a_real_photo_when_one_exists_for_that_category(self):
+        from io import BytesIO
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        buf = BytesIO()
+        Image.new("RGB", (30, 30), color=(10, 20, 30)).save(buf, format="JPEG")
+        photo = SimpleUploadedFile("bread.jpg", buf.getvalue(), content_type="image/jpeg")
+
+        donor = make_user("photoshowdonor", User.Role.DONOR, area="nsw-newtown")
+        d = Donation.objects.create(donor=donor, food_item="Bread", quantity_kg=5,
+                                    food_category="bakery", pickup_area="nsw-newtown", safety_confirmed=True)
+        d.photo = photo
+        d.save()
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn(d.photo.url, html)
+
+    def test_showcase_box_falls_back_to_icon_when_no_photo_exists(self):
+        donor = make_user("noPhotoDonor", User.Role.DONOR, area="nsw-newtown")
+        Donation.objects.create(donor=donor, food_item="Rice", quantity_kg=5,
+                                food_category="packaged", pickup_area="nsw-newtown", safety_confirmed=True)
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn("bi-box-seam-fill", html)  # the packaged-category fallback icon
+
     def test_home_hero_shows_the_showcase_box_instead_of_the_static_illustration(self):
         donor = make_user("showcasedonor2", User.Role.DONOR, area="nsw-newtown")
         Donation.objects.create(donor=donor, food_item="Bread", quantity_kg=5,

@@ -72,6 +72,8 @@ class Donation(models.Model):
     storage = models.CharField(max_length=8, choices=Storage.choices, default=Storage.AMBIENT)
     date_type = models.CharField(max_length=12, choices=DateType.choices, default=DateType.USE_BY)
     allergen_note = models.CharField(max_length=150, blank=True, help_text="e.g. contains nuts, gluten, dairy")
+    photo = models.ImageField(upload_to="donation_photos/", blank=True, null=True,
+                              help_text="A real photo of the food - shown on the listing and, if it's live, on the Home page showcase.")
     safety_confirmed = models.BooleanField(
         default=False, help_text="Donor confirmed the food is safe, correctly stored and within its date.")
     pickup_address = models.CharField(max_length=255, blank=True)

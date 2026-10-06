@@ -5,8 +5,7 @@ from django.utils import timezone
 from . import media_library
 
 # Representative styling for each food category on the Home page's "what's live right
-# now" box. There's no photo-upload field on a Donation, so this uses a bold icon-on-
-# gradient tile rather than a real photo of what was actually donated.
+# now" box, used as a fallback when nobody in that category has uploaded a photo yet.
 CATEGORY_SHOWCASE = {
     "produce": {"label": "Fresh produce", "icon": "bi-basket2-fill", "gradient": "linear-gradient(135deg,#22c55e,#065f46)"},
     "bakery": {"label": "Bakery", "icon": "bi-cup-hot-fill", "gradient": "linear-gradient(135deg,#f59e0b,#92400e)"},
@@ -20,18 +19,27 @@ CATEGORY_SHOWCASE = {
 
 def _live_showcase_cards():
     """Which categories currently have an open listing, with a live count each - feeds
-    the Home page's auto-rotating 'what's live right now' box."""
+    the Home page's auto-rotating 'what's live right now' box. Prefers a real donor
+    photo (the most recently listed one in that category that has one); falls back to
+    the icon-on-gradient tile for a category where nobody's uploaded a photo yet."""
     from donations.models import Donation
     Status = Donation.Status
-    counts = dict(
-        Donation.objects.exclude(status__in=[Status.CANCELLED, Status.EXPIRED])
-        .values_list("food_category").annotate(n=Count("id")).order_by()
-    )
+    open_qs = Donation.objects.exclude(status__in=[Status.CANCELLED, Status.EXPIRED])
+    counts = dict(open_qs.values_list("food_category").annotate(n=Count("id")).order_by())
+
+    photos = {}
+    for d in open_qs.order_by("-date_listed").only("food_category", "photo"):
+        if d.food_category not in photos and d.photo:
+            photos[d.food_category] = d.photo.url
+
     cards = []
     for key, meta in CATEGORY_SHOWCASE.items():
         n = counts.get(key, 0)
         if n:
-            cards.append({"key": key, "count": n, **meta})
+            card = {"key": key, "count": n, **meta}
+            if key in photos:
+                card["photo"] = photos[key]
+            cards.append(card)
     return cards
 
 
