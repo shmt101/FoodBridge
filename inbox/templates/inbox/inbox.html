@@ -6,7 +6,12 @@
     <h2 class="mb-1">Inbox</h2>
     <p class="text-muted mb-0">Updates about your donations, and messages from other FoodBridge members.</p>
   </div>
-  <a class="btn btn-forest" href="{% url 'inbox:new' %}"><i class="bi bi-pencil-square"></i> New message</a>
+  <div class="d-flex gap-2">
+    {% if user.is_admin_role %}
+    <a class="btn btn-outline-forest" href="{% url 'inbox:broadcast' %}"><i class="bi bi-broadcast"></i> Message everyone</a>
+    {% endif %}
+    <a class="btn btn-forest" href="{% url 'inbox:new' %}"><i class="bi bi-pencil-square"></i> New message</a>
+  </div>
 </div>
 
 <div class="dash-tabs mb-3" role="tablist">

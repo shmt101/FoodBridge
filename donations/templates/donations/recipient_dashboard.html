@@ -15,7 +15,7 @@
       <div class="stat-card stat-warn"><div class="stat-value">{{ stats.offers }}</div><div class="stat-label">Offers waiting for you</div></div>
       <div class="stat-card"><div class="stat-value">{{ stats.active }}</div><div class="stat-label">Claims in progress</div></div>
       <div class="stat-card stat-good"><div class="stat-value">{{ stats.kg_received }} kg</div><div class="stat-label">Received · ≈{{ stats.meals }} meals</div></div>
-      <div class="stat-card stat-info"><div class="stat-value">{% if stats.nearest is not None %}{{ stats.nearest|km }}{% else %}—{% endif %}</div><div class="stat-label">Nearest open donation</div></div>
+      <div class="stat-card stat-info"><div class="stat-value">{% if stats.nearest is not None %}{{ stats.nearest|km }}{% else %}:{% endif %}</div><div class="stat-label">Nearest open donation</div></div>
     </div>
   </div>
 
@@ -70,7 +70,7 @@
             <tr>
               <td><strong>{{ d.food_item }}</strong><br>{% include "partials/food_chips.html" %}<br><span class="tbl-note">{{ d.quantity_kg }} kg{% if d.expires_at %} · <span class="countdown" data-expires="{{ d.expires_at|iso }}" data-done="expired">{{ d.expires_at|date:"d M H:i" }}</span>{% endif %}</span></td>
               <td>{{ d.donor_name }}<br><span class="tbl-note">{{ d.area_display }}</span></td>
-              <td><span class="chip {{ d.km_away|dist_class }}">{% if d.km_away is not None %}{{ d.km_away|km }}{% else %}—{% endif %}</span></td>
+              <td><span class="chip {{ d.km_away|dist_class }}">{% if d.km_away is not None %}{{ d.km_away|km }}{% else %}:{% endif %}</span></td>
               <td>
                 <form method="post" class="mb-0">{% csrf_token %}
                   <input type="hidden" name="action" value="claim"><input type="hidden" name="donation_id" value="{{ d.id }}">

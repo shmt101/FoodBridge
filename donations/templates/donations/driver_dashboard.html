@@ -27,7 +27,7 @@
       <h6 class="section-title mb-2"><i class="bi bi-pin-map text-success"></i> Pickups near you</h6>
       <div class="row g-2 mb-2">
         <div class="col-4"><div class="mini-stat"><b>{{ snapshot.open_jobs }}</b><span>Open</span></div></div>
-        <div class="col-4"><div class="mini-stat"><b>{% if snapshot.nearest_km is not None %}{{ snapshot.nearest_km|km }}{% else %}—{% endif %}</b><span>Nearest</span></div></div>
+        <div class="col-4"><div class="mini-stat"><b>{% if snapshot.nearest_km is not None %}{{ snapshot.nearest_km|km }}{% else %}:{% endif %}</b><span>Nearest</span></div></div>
         <div class="col-4"><div class="mini-stat"><b>{{ snapshot.within_25 }}</b><span>≤25 km</span></div></div>
       </div>
       {% for b in snapshot.bands %}
@@ -42,7 +42,7 @@
         <div class="col-6"><div class="mini-stat"><b>{{ snapshot.deliveries }}</b><span>Deliveries</span></div></div>
         <div class="col-6"><div class="mini-stat"><b>{{ snapshot.kg_moved }} kg</b><span>Food moved</span></div></div>
         <div class="col-6"><div class="mini-stat"><b>{{ snapshot.km_driven }} km</b><span>Distance</span></div></div>
-        <div class="col-6"><div class="mini-stat"><b>{% if snapshot.avg_km is not None %}{{ snapshot.avg_km|km }}{% else %}—{% endif %}</b><span>Avg/delivery</span></div></div>
+        <div class="col-6"><div class="mini-stat"><b>{% if snapshot.avg_km is not None %}{{ snapshot.avg_km|km }}{% else %}:{% endif %}</b><span>Avg/delivery</span></div></div>
       </div>
     </div>
   </div>
@@ -104,7 +104,7 @@
           {% for d in needs_driver %}
             <tr>
               <td><strong>{{ d.food_item }}</strong><br>{% include "partials/food_chips.html" %}<br><span class="tbl-note">{{ d.quantity_kg }} kg{% if d.expires_at %} · <span class="countdown" data-expires="{{ d.expires_at|iso }}" data-done="expired">{{ d.expires_at|date:"d M H:i" }}</span>{% endif %}</span></td>
-              <td>{{ d.area_display|default:"—" }}<br><span class="tbl-note">{{ d.pickup_address|default:"—" }}</span></td>
+              <td>{{ d.area_display|default:":" }}<br><span class="tbl-note">{{ d.pickup_address|default:":" }}</span></td>
               <td>
                 {% if d.km_to_pickup is not None %}
                   <span class="chip {{ d.km_to_pickup|dist_class }}"><i class="bi bi-geo-alt"></i> {{ d.km_to_pickup|km }}</span>
@@ -153,7 +153,7 @@
       <div class="app-card">
         <h5 class="mb-3 section-title">Recently completed</h5>
         <ul class="list-unstyled mb-0 small">
-          {% for d in completed %}<li class="mb-1"><i class="bi bi-check-circle text-success"></i> {{ d.food_item }} — delivered {{ d.delivered_at|date:"d M" }}</li>
+          {% for d in completed %}<li class="mb-1"><i class="bi bi-check-circle text-success"></i> {{ d.food_item }}: delivered {{ d.delivered_at|date:"d M" }}</li>
           {% empty %}<li class="text-muted">No completed deliveries yet.</li>{% endfor %}
         </ul>
       </div>

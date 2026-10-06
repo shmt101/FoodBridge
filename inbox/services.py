@@ -7,6 +7,7 @@ from decimal import Decimal
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core import mail
+from django.db.models import Q
 from django.urls import reverse
 
 from .models import Notification
@@ -71,6 +72,63 @@ def _email(rows, users):
 
 def _kg(quantity):
     return format(Decimal(str(quantity)).normalize(), "f")
+
+
+# ---- messaging permissions --------------------------------------------------
+# Direct, one-to-one messaging is deliberately NOT open between any two FoodBridge
+# accounts. Admins can reach (and broadcast to) everyone, since they resolve issues
+# network-wide. Every other user (donor, recipient, driver, auditor) may only start
+# or continue a conversation with someone they're actually involved with in the
+# donation process - i.e. they've been the donor, recipient or driver together on at
+# least one donation - or with an Admin, for support. If nothing links two accounts,
+# neither can message the other.
+def _linked_user_ids(user):
+    """Every user id this person has shared a donation with, as donor/recipient/driver,
+    in any combination (donor<->recipient, donor<->driver, recipient<->driver)."""
+    from donations.models import Donation
+    rows = Donation.objects.filter(
+        Q(donor_id=user.pk) | Q(recipient_id=user.pk) | Q(driver_id=user.pk)
+    ).values_list("donor_id", "recipient_id", "driver_id")
+    ids = set()
+    for donor_id, recipient_id, driver_id in rows:
+        for uid in (donor_id, recipient_id, driver_id):
+            if uid and uid != user.pk:
+                ids.add(uid)
+    return ids
+
+
+def can_message(sender, other):
+    """May `sender` start or continue a direct conversation with `other`?"""
+    if sender.pk == other.pk:
+        return False
+    if sender.is_admin_role() or sender.is_superuser:
+        return True
+    if other.is_admin_role() or other.is_superuser:
+        return True  # anyone can always reach an admin for help
+    return other.pk in _linked_user_ids(sender)
+
+
+def messageable_users(user):
+    """Active accounts `user` is allowed to start a new direct conversation with."""
+    User = get_user_model()
+    qs = User.objects.filter(is_active=True).exclude(pk=user.pk)
+    if user.is_admin_role() or user.is_superuser:
+        return qs.order_by("first_name", "username")
+    allowed_ids = _linked_user_ids(user) | set(
+        qs.filter(Q(role=User.Role.ADMIN) | Q(is_staff=True)).values_list("pk", flat=True)
+    )
+    return qs.filter(pk__in=allowed_ids).order_by("first_name", "username")
+
+
+def broadcast_message(sender, body):
+    """Admin-only: one message to every other active account at once."""
+    from .models import Message
+    User = get_user_model()
+    recipients = User.objects.filter(is_active=True).exclude(pk=sender.pk)
+    Message.objects.bulk_create([
+        Message(sender=sender, recipient=r, body=body, is_broadcast=True) for r in recipients
+    ])
+    return recipients.count()
 
 
 def role_dashboard_link(user):

@@ -24,8 +24,8 @@
       <tr>
         <td><strong>{{ u.get_full_name|default:u.username }}</strong><br><span class="tbl-note">@{{ u.username }} · {{ u.email }}{% if u.phone %} · {{ u.phone }}{% endif %}</span></td>
         <td><span class="chip">{{ u.get_role_display }}</span></td>
-        <td>{{ u.organisation_name|default:"—" }}</td>
-        <td>{{ u.area_display|default:"—" }}<br><span class="tbl-note">{{ u.address|default:"no address" }}</span></td>
+        <td>{{ u.organisation_name|default:":" }}</td>
+        <td>{{ u.area_display|default:":" }}<br><span class="tbl-note">{{ u.address|default:"no address" }}</span></td>
         <td class="text-nowrap">{{ u.date_joined|date:"d M Y, H:i" }}{% if tab != 'pending' and u.rejection_reason %}<br><span class="tbl-note">{{ u.rejection_reason }}</span>{% endif %}</td>
         <td style="min-width:230px">
           {% if tab != 'approved' %}

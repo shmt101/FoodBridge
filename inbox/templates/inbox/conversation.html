@@ -20,7 +20,7 @@
             <small>{{ m.created_at|date:"d M, H:i" }}</small>
           </div>
         {% empty %}
-          <p class="text-muted text-center my-4">No messages yet — say hello to {{ other.display_name }}.</p>
+          <p class="text-muted text-center my-4">No messages yet: say hello to {{ other.display_name }}.</p>
         {% endfor %}
       </div>
 

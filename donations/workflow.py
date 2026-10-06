@@ -33,6 +33,8 @@ from .models import Donation, DonationEvent, Offer
 Status = Donation.Status
 Kind = Notification.Kind
 
+LIVE_TRACKING_TEXT = "Live Tracking will soon be possible and is under production!"
+
 
 class WorkflowError(Exception):
     """A rule was broken; the message is safe to show to the user."""
@@ -170,6 +172,8 @@ def start_matching(donation):
         note="Listed" + (f" · expires {timezone.localtime(donation.expires_at):%d %b %H:%M}" if donation.expires_at else ""))
     _open_wave(donation, Offer.Role.RECIPIENT)
     _alert_nearby_drivers(donation)
+    notes.notify([donation.donor], Kind.LIVE_TRACKING, LIVE_TRACKING_TEXT,
+                 donation, reverse("donations:donor_dashboard"))
 
 
 def _alert_nearby_drivers(donation):
@@ -292,6 +296,8 @@ def claim(donation_id, user):
         d.driver_pool_open = True
         d.save(update_fields=["driver_pool_open", "date_updated"])
         _open_wave(d, Offer.Role.DRIVER)
+        notes.notify([user], Kind.LIVE_TRACKING, LIVE_TRACKING_TEXT,
+                     d, reverse("donations:recipient_dashboard"))
     return d
 
 
@@ -370,6 +376,8 @@ def accept_pickup(donation_id, user):
         d.offers.filter(role=Offer.Role.DRIVER, status=Offer.Status.OFFERED).update(
             status=Offer.Status.WITHDRAWN, responded_at=now)
         log(d, DonationEvent.Kind.PICKED_UP, user, note=f"Accepted by {user.display_name}")
+        notes.notify([user], Kind.LIVE_TRACKING, LIVE_TRACKING_TEXT,
+                     d, reverse("donations:driver_dashboard"))
     return d
 
 

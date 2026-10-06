@@ -1,0 +1,28 @@
+{% extends "base_app.html" %}
+{% block title %}Message everyone · FoodBridge{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <a class="back-link small text-decoration-none" href="{% url 'inbox:home' %}"><i class="bi bi-arrow-left"></i> Back to inbox</a>
+    <div class="app-card mt-2">
+      <h2 class="mb-1"><i class="bi bi-broadcast"></i> Message everyone</h2>
+      <p class="text-muted small mb-3">
+        Only Admins can send a message to every account at once. Everyone else can only
+        message someone they're directly involved with on a donation.
+      </p>
+      {% if sent %}
+        <div class="alert alert-success">Sent to {{ sent }} account{{ sent|pluralize }}.</div>
+      {% endif %}
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label" for="{{ form.body.id_for_label }}">Message to everyone</label>
+          {{ form.body }}
+          {% for e in form.body.errors %}<div class="text-danger small mt-1">{{ e }}</div>{% endfor %}
+        </div>
+        <button class="btn btn-forest" type="submit"><i class="bi bi-broadcast"></i> Send to everyone</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

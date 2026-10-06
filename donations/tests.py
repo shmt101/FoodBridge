@@ -240,6 +240,25 @@ class MatchingTests(TestCase):
         self.assertEqual([e.kind for e in d.events.all()][:2], ["listed", "offered"])
         self.assertEqual(d.events.last().kind, "delivered")
 
+    def test_live_tracking_placeholder_notice_on_list_claim_and_accept(self):
+        d = make_donation(self.donor)
+        self.assertEqual(
+            Notification.objects.get(user=self.donor, kind="live_tracking").text,
+            "Live Tracking will soon be possible and is under production!",
+        )
+        workflow.claim(d.pk, self.p_near)
+        self.assertEqual(
+            Notification.objects.get(user=self.p_near, kind="live_tracking").text,
+            "Live Tracking will soon be possible and is under production!",
+        )
+        workflow.accept_pickup(d.pk, self.d_near)
+        self.assertEqual(
+            Notification.objects.get(user=self.d_near, kind="live_tracking").text,
+            "Live Tracking will soon be possible and is under production!",
+        )
+        # nobody else gets it - it's a personal heads-up, not a broadcast
+        self.assertFalse(Notification.objects.filter(user=self.p_mid, kind="live_tracking").exists())
+
     def test_other_driver_cannot_take_a_reserved_job(self):
         d = make_donation(self.donor)
         workflow.claim(d.pk, self.p_near)
@@ -517,6 +536,9 @@ class LiveFilterTests(TestCase):
         make_donation(donor, food_item="Newcastle fruit", pickup_area="nsw-newcastle")
         make_donation(donor, food_item="Melbourne soup", pickup_area="vic-melbourne-cbd")
         make_donation(donor, food_item="Expired eggs", pickup_area="nsw-sydney-cbd", status="Expired")
+        # Live Donations is signed-in-only now - browse as any approved user.
+        make_user("browser", User.Role.RECIPIENT)
+        self.client.login(username="browser", password=PW)
 
     def names(self, params):
         page = self.client.get(reverse("donations:live"), params)
@@ -534,6 +556,12 @@ class LiveFilterTests(TestCase):
 
     def test_expired_and_cancelled_are_hidden_by_default(self):
         self.assertNotIn("Expired eggs", self.names({}))
+
+    def test_logged_out_visitor_is_sent_to_login_instead_of_the_list(self):
+        self.client.logout()
+        resp = self.client.get(reverse("donations:live"))
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn(reverse("accounts:login"), resp["Location"])
 
 
 class ReportTests(TestCase):
@@ -582,11 +610,12 @@ class ReportTests(TestCase):
         start, end = analytics.period_bounds(timezone.localdate() + timedelta(days=2), None)
         self.assertEqual(analytics.network_summary(start, end)["listings"], 0)
 
-    def test_report_page_is_auditor_only_not_plain_admin(self):
+    def test_report_page_is_admin_and_auditor_only(self):
         self.client.login(username="donor", password=PW)
         self.assertEqual(self.client.get(reverse("donations:partnership_report")).status_code, 403)
         self.client.login(username="boss", password=PW)
-        self.assertEqual(self.client.get(reverse("donations:partnership_report")).status_code, 403)
+        page = self.client.get(reverse("donations:partnership_report"))
+        self.assertContains(page, "Partnership Activity")
         self.client.login(username="checker", password=PW)
         page = self.client.get(reverse("donations:partnership_report"))
         self.assertContains(page, "Partnership Activity")
@@ -600,36 +629,43 @@ class ReportTests(TestCase):
         self.assertEqual(self.client.get(reverse("accounts:manage_users")).status_code, 403)
         self.assertEqual(self.client.get(reverse("donations:admin_dashboard")).status_code, 403)
 
-    def test_admin_cannot_reach_reports_or_csv_but_keeps_user_management(self):
+    def test_admin_can_reach_reports_and_csv_and_keeps_user_management(self):
         self.client.login(username="boss", password=PW)
-        self.assertEqual(self.client.get(reverse("donations:export_delivered_csv")).status_code, 403)
-        self.assertEqual(self.client.get(reverse("donations:partnership_report"), {"export": "donors"}).status_code, 403)
+        self.assertEqual(self.client.get(reverse("donations:export_delivered_csv")).status_code, 200)
+        self.assertEqual(self.client.get(reverse("donations:partnership_report"), {"export": "donors"}).status_code, 200)
         self.assertEqual(self.client.get(reverse("accounts:approvals")).status_code, 200)
         self.assertEqual(self.client.get(reverse("accounts:manage_users")).status_code, 200)
 
-    def test_csv_exports(self):
-        self.client.login(username="checker", password=PW)
-        for kind, needle in (("donors", "Corner Bakery"), ("recipients", "Hope Kitchen"),
-                             ("drivers", "Driver"), ("partnerships", "Hope Kitchen")):
-            resp = self.client.get(reverse("donations:partnership_report"), {"export": kind, "range": "all"})
-            self.assertEqual(resp["Content-Type"], "text/csv")
-            self.assertIn(needle, resp.content.decode())
-        self.assertEqual(self.client.get(reverse("donations:partnership_report"), {"export": "nope"}).status_code, 404)
-        delivered_csv = self.client.get(reverse("donations:export_delivered_csv"))
-        self.assertEqual(delivered_csv["Content-Type"], "text/csv")
+    def test_csv_exports_are_admin_and_auditor_only(self):
+        # a plain partner can't reach either export
+        self.client.login(username="donor", password=PW)
+        self.assertEqual(self.client.get(reverse("donations:export_delivered_csv")).status_code, 403)
+        self.assertEqual(self.client.get(reverse("donations:partnership_report"), {"export": "donors"}).status_code, 403)
 
-    def test_partner_sees_only_their_own_report(self):
+        for username in ("checker", "boss"):
+            self.client.login(username=username, password=PW)
+            for kind, needle in (("donors", "Corner Bakery"), ("recipients", "Hope Kitchen"),
+                                 ("drivers", "Driver"), ("partnerships", "Hope Kitchen")):
+                resp = self.client.get(reverse("donations:partnership_report"), {"export": kind, "range": "all"})
+                self.assertEqual(resp["Content-Type"], "text/csv")
+                self.assertIn(needle, resp.content.decode())
+            self.assertEqual(self.client.get(reverse("donations:partnership_report"), {"export": "nope"}).status_code, 404)
+            delivered_csv = self.client.get(reverse("donations:export_delivered_csv"))
+            self.assertEqual(delivered_csv["Content-Type"], "text/csv")
+
+    def test_partner_sees_only_their_own_report_and_cannot_export_it(self):
         self.client.login(username="donor2", password=PW)
         page = self.client.get(reverse("donations:my_report"), {"range": "all"})
         self.assertContains(page, "Quiet Deli")
         self.assertNotContains(page, "Corner Bakery</td>")
+        # the CSV button is hidden on their own report, and the export param is simply ignored
+        self.assertNotContains(page, "?export=donors")
         csv_resp = self.client.get(reverse("donations:my_report"), {"export": "donors", "range": "all"})
-        self.assertIn("Quiet Deli", csv_resp.content.decode())
-        self.assertNotIn("Corner Bakery", csv_resp.content.decode())
-        # a plain admin has nothing to see here - reports are the auditor's job now
+        self.assertEqual(csv_resp["Content-Type"], "text/html; charset=utf-8")
+        self.assertContains(csv_resp, "Quiet Deli")
+        # a plain admin and the auditor both get bounced to the full, exportable report
         self.client.login(username="boss", password=PW)
-        self.assertRedirects(self.client.get(reverse("donations:my_report")), reverse("donations:admin_dashboard"))
-        # the auditor account also has no personal donations, so it's bounced to the full report
+        self.assertRedirects(self.client.get(reverse("donations:my_report")), reverse("donations:partnership_report"))
         self.client.login(username="checker", password=PW)
         self.assertRedirects(self.client.get(reverse("donations:my_report")), reverse("donations:partnership_report"))
 
@@ -1179,7 +1215,7 @@ class AdminAuditorSplitTests(TestCase):
         page = self.client.get(reverse("donations:admin_dashboard"))
         self.assertContains(page, "Approvals</a>")
         self.assertContains(page, "Users</a>")
-        self.assertNotContains(page, "Reports</a>")
+        self.assertContains(page, "Reports</a>")
         self.assertContains(page, "@boss")
         self.assertContains(page, ">Admin<")
         self.client.login(username="checker", password=PW)
@@ -1215,14 +1251,13 @@ class AdminAuditorSplitTests(TestCase):
         page = self.client.get(reverse("donations:admin_dashboard"))
         self.assertContains(page, "Dashboard</a>")
 
-    def test_admin_dashboard_is_stats_and_feedback_only(self):
+    def test_admin_dashboard_is_stats_feedback_and_approval_queue_only(self):
         self.client.login(username="boss", password=PW)
         page = self.client.get(reverse("donations:admin_dashboard"))
-        html = page.content.decode()
         self.assertContains(page, "Feedback")
-        # "Approvals" legitimately still appears once, in the shared nav - but the dashboard
-        # body itself should have no second Approvals link and no Manage-users button/table.
-        self.assertEqual(html.count('href="/accounts/approvals/"'), 1)
+        # the redesigned dashboard shows an "Awaiting approval" card (nav still links there
+        # too), but still has no Manage-users button/table, and no raw tables anywhere.
+        self.assertContains(page, "Awaiting approval")
         self.assertNotContains(page, "Manage users")
         self.assertNotContains(page, "<table")
         self.assertNotContains(page, "waiting for approval")

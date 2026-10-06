@@ -44,10 +44,10 @@
         </td>
         <td class="text-end">{{ d.quantity_kg }} kg</td>
         <td>{{ d.donor_name }}</td>
-        <td>{{ d.area_display|default:"—" }}</td>
-        {% if chosen_area %}<td class="text-end"><span class="chip {{ d.km_away|dist_class }}">{% if d.km_away is not None %}{{ d.km_away|km }}{% else %}—{% endif %}</span></td>{% endif %}
+        <td>{{ d.area_display|default:":" }}</td>
+        {% if chosen_area %}<td class="text-end"><span class="chip {{ d.km_away|dist_class }}">{% if d.km_away is not None %}{{ d.km_away|km }}{% else %}:{% endif %}</span></td>{% endif %}
         <td><span class="badge-status {{ d.status|status_class }}">{{ d.status }}</span></td>
-        <td class="text-nowrap">{% if d.expires_at and d.status == 'Pending' or d.expires_at and d.status == 'Assigned' %}<span class="countdown" data-expires="{{ d.expires_at|iso }}" data-done="expired">{{ d.expires_at|date:"d M H:i" }}</span>{% else %}<span class="tbl-note">—</span>{% endif %}</td>
+        <td class="text-nowrap">{% if d.expires_at and d.status == 'Pending' or d.expires_at and d.status == 'Assigned' %}<span class="countdown" data-expires="{{ d.expires_at|iso }}" data-done="expired">{{ d.expires_at|date:"d M H:i" }}</span>{% else %}<span class="tbl-note">:</span>{% endif %}</td>
         <td>{{ d.date_listed|date:"d M, H:i" }}</td>
       </tr>
     {% empty %}

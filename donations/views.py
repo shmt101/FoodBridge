@@ -11,7 +11,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from accounts.areas import AREAS, STATES, area_label, distance_km
-from accounts.decorators import admin_required, auditor_required, role_required
+from accounts.decorators import admin_or_auditor_required, admin_required, auditor_required, role_required
 from accounts.models import User
 from . import analytics, workflow
 from inbox import services as notes
@@ -48,8 +48,10 @@ def _reason_response(request, reasons, fn, donation_id, success):
 
 
 # --------------------------------------------------------------------------- public
+@login_required
 def live_donations(request):
-    """Public live page with an area filter: pick where you are and see the nearest listings."""
+    """Live page with an area filter: pick where you are and see the nearest listings.
+    Signed-in users only - a visitor must log in (or sign up) before they can browse it."""
     workflow.maybe_process_timeouts()
     form = DonationSearchForm(request.GET or None)
     donations = Donation.objects.select_related("donor", "recipient")
@@ -189,7 +191,8 @@ def _active_by_area():
 
 
 def map_data(request):
-    """Aggregated by area only - never exposes street addresses."""
+    """Aggregated by area only - never exposes street addresses. Deliberately still public -
+    unlike the Live Donations list, the map never shows per-listing detail or addresses."""
     from django.http import JsonResponse
     workflow.maybe_process_timeouts()
     return JsonResponse({"areas": _active_by_area()})
@@ -355,6 +358,15 @@ def admin_dashboard(request):
     workflow.maybe_process_timeouts()
     donations = Donation.objects.select_related("donor", "recipient", "driver")
     now = timezone.now()
+    pending_queue = (
+        User.objects.filter(approval_status=User.Approval.PENDING)
+        .exclude(role=User.Role.ADMIN).exclude(is_staff=True)
+        .order_by("-date_joined")
+    )
+    open_issues = (
+        Feedback.objects.filter(is_issue=True, resolved=False)
+        .select_related("author", "donation").order_by("-created_at")
+    )
     return render(request, "donations/admin_dashboard.html", {
         "counts": {
             "pending": donations.filter(status=Status.PENDING).count(),
@@ -366,10 +378,11 @@ def admin_dashboard(request):
             "donors": User.objects.filter(role=User.Role.DONOR).count(),
             "recipients": User.objects.filter(role=User.Role.RECIPIENT).count(),
             "drivers": User.objects.filter(role=User.Role.DRIVER).count(),
-            "open_issues": Feedback.objects.filter(is_issue=True, resolved=False).count(),
-            "awaiting_approval": User.objects.filter(approval_status=User.Approval.PENDING)
-                                 .exclude(role=User.Role.ADMIN).exclude(is_staff=True).count(),
+            "open_issues": open_issues.count(),
+            "awaiting_approval": pending_queue.count(),
         },
+        "pending_queue": pending_queue[:5],
+        "open_issues": open_issues[:5],
     })
 
 
@@ -391,9 +404,9 @@ def admin_cancel(request):
     return redirect("donations:admin_dashboard")
 
 
-@auditor_required
+@admin_or_auditor_required
 def export_delivered_csv(request):
-    """CSV report of delivered food. Auditor-only: the one place all delivered-food data can be pulled."""
+    """CSV report of delivered food. Admins and the Auditor account only - no other role may pull it."""
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = 'attachment; filename="foodbridge_delivered_report.csv"'
     writer = csv.writer(response)
@@ -448,7 +461,7 @@ def _report_context(request, only=None):
     }
 
 
-@auditor_required
+@admin_or_auditor_required
 def partnership_report(request):
     """Partnership Activity Report: how every donor, pantry and driver is contributing."""
     workflow.maybe_process_timeouts()
@@ -470,11 +483,9 @@ def partnership_report(request):
 def my_activity_report(request):
     """A partner's own activity report (donor, pantry or driver)."""
     user = request.user
-    if user.is_auditor or user.is_superuser:
+    if user.is_auditor or user.is_superuser or user.is_admin_role():
+        # Admins and the auditor get the network-wide report (with CSV export) instead.
         return redirect("donations:partnership_report")
-    if user.is_admin_role():
-        # Plain admins manage people, not reports - that page is auditor-only now.
-        return redirect("donations:admin_dashboard")
     start, end, ctx = _report_context(request, only=user)
     ctx.update({"mine": True, "partnerships": analytics.partnership_rows(start, end, only=user)})
     if user.role == User.Role.DONOR:
@@ -483,9 +494,9 @@ def my_activity_report(request):
         ctx["recipients"] = analytics.recipient_rows(start, end, only=user)
     elif user.role == User.Role.DRIVER:
         ctx["drivers"] = analytics.driver_rows(start, end, only=user)
-    kind = request.GET.get("export")
-    if kind:
-        return _export_report(kind, start, end, only=user)
+    # CSV export of this report is restricted to Admins and the Auditor account (see
+    # partnership_report) - a plain Donor/Recipient/Driver can view their own numbers here
+    # but cannot download them.
     return render(request, "donations/reports.html", ctx)
 
 

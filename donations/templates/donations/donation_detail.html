@@ -16,12 +16,12 @@
         <span class="chip chip-soft">{{ d.get_date_type_display }} date</span>
         {% if d.safety_confirmed %}<span class="chip dist-near"><i class="bi bi-shield-check"></i> Donor confirmed safe</span>{% endif %}</div>
       <dl class="row small mb-0">
-        <dt class="col-5">Pickup area</dt><dd class="col-7">{{ d.area_display|default:"—" }}</dd>
-        <dt class="col-5">Pickup address</dt><dd class="col-7">{{ d.pickup_address|default:"—" }}</dd>
+        <dt class="col-5">Pickup area</dt><dd class="col-7">{{ d.area_display|default:":" }}</dd>
+        <dt class="col-5">Pickup address</dt><dd class="col-7">{{ d.pickup_address|default:":" }}</dd>
         <dt class="col-5">Listed</dt><dd class="col-7">{{ d.date_listed|date:"d M Y, H:i" }}</dd>
         <dt class="col-5">Expires</dt><dd class="col-7">{% if d.expires_at %}{{ d.expires_at|date:"d M Y, H:i" }}{% else %}No expiry{% endif %}</dd>
-        <dt class="col-5">Recipient</dt><dd class="col-7">{{ d.recipient.display_name|default:"—" }}</dd>
-        <dt class="col-5">Driver</dt><dd class="col-7">{{ d.driver.display_name|default:"—" }}</dd>
+        <dt class="col-5">Recipient</dt><dd class="col-7">{{ d.recipient.display_name|default:":" }}</dd>
+        <dt class="col-5">Driver</dt><dd class="col-7">{{ d.driver.display_name|default:":" }}</dd>
         {% if leg_km is not None %}<dt class="col-5">Delivery leg</dt><dd class="col-7">{{ leg_km|km }}</dd>{% endif %}
         {% if d.cancel_reason %}
           <dt class="col-5">Cancelled because</dt><dd class="col-7">{{ d.get_cancel_reason_display }}{% if d.cancel_note %}<br><span class="text-muted">“{{ d.cancel_note }}”</span>{% endif %}</dd>
@@ -74,7 +74,7 @@
       <h5 class="section-title mb-3">Offers</h5>
       <div class="table-responsive"><table class="table table-sm align-middle mb-0">
         <thead><tr><th>Who</th><th>For</th><th>Wave</th><th>Distance</th><th>Result</th></tr></thead>
-        <tbody>{% for o in offers %}<tr><td>{{ o.user.display_name }}</td><td>{{ o.get_role_display }}</td><td>{{ o.wave }}</td><td>{% if o.distance_km is not None %}{{ o.distance_km|km }}{% else %}—{% endif %}</td><td>{{ o.get_status_display }}</td></tr>{% endfor %}</tbody>
+        <tbody>{% for o in offers %}<tr><td>{{ o.user.display_name }}</td><td>{{ o.get_role_display }}</td><td>{{ o.wave }}</td><td>{% if o.distance_km is not None %}{{ o.distance_km|km }}{% else %}:{% endif %}</td><td>{{ o.get_status_display }}</td></tr>{% endfor %}</tbody>
       </table></div>
     </div>
     {% endif %}

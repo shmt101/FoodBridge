@@ -46,7 +46,7 @@
           {% elif home_kind == "pending" %}
             <div class="eyebrow"><span></span> Awaiting approval</div>
             <h1>Welcome, <em>{{ user.first_name|default:user.username }}</em>.</h1>
-            <p class="hero-lead">An admin is reviewing your account. You'll be notified the moment you're approved — in the meantime you can browse what's live or update your profile.</p>
+            <p class="hero-lead">An admin is reviewing your account. You'll be notified the moment you're approved: in the meantime you can browse what's live or update your profile.</p>
             <div class="d-flex flex-wrap gap-3 hero-actions">
               <a class="btn btn-primary-custom" href="{% url 'accounts:pending' %}">My status <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
               <a class="btn btn-secondary-custom" href="{% url 'donations:live' %}">Live Donations</a>
@@ -74,9 +74,9 @@
             <div class="eyebrow"><span></span> Driver</div>
             <h1>Welcome back,<br><em>{{ user.first_name|default:user.username }}</em>.</h1>
             {% if driver_ready %}
-              <p class="hero-lead">{% if stat_a %}You have {{ stat_a }} pickup offer{{ stat_a|pluralize }} waiting for you.{% else %}No pickup offers right now — new jobs are ranked by distance from you.{% endif %}</p>
+              <p class="hero-lead">{% if stat_a %}You have {{ stat_a }} pickup offer{{ stat_a|pluralize }} waiting for you.{% else %}No pickup offers right now: new jobs are ranked by distance from you.{% endif %}</p>
             {% else %}
-              <p class="hero-lead">Add your area and street address to your profile before you can pick up orders — it's how we rank jobs by distance from you.</p>
+              <p class="hero-lead">Add your area and street address to your profile before you can pick up orders: it's how we rank jobs by distance from you.</p>
             {% endif %}
             <div class="d-flex flex-wrap gap-3 hero-actions">
               <a class="btn btn-primary-custom" href="{% url 'donations:driver_dashboard' %}">My dashboard <i class="bi bi-arrow-right" aria-hidden="true"></i></a>

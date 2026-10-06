@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q
 from django.http import JsonResponse
 from django.urls import reverse
@@ -7,7 +8,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .forms import MessageForm, NewMessageForm
+from accounts.decorators import admin_required
+from . import services
+from .forms import BroadcastForm, MessageForm, NewMessageForm
 from .models import Message, Notification
 
 User = get_user_model()
@@ -47,6 +50,11 @@ def conversation(request, user_id):
     other = get_object_or_404(User, pk=user_id, is_active=True)
     if other.pk == request.user.pk:
         return redirect("inbox:home")
+    # Only open a thread between people who are actually allowed to message each
+    # other - an Admin, or someone linked through the donation process - even if a
+    # broadcast or an earlier message means a thread technically already exists.
+    if not services.can_message(request.user, other):
+        raise PermissionDenied("You can only message someone you're involved with on a donation.")
 
     if request.method == "POST":
         form = MessageForm(request.POST)
@@ -66,6 +74,18 @@ def conversation(request, user_id):
         read_at=timezone.now()
     )
     return render(request, "inbox/conversation.html", {"other": other, "thread": thread, "form": form})
+
+
+@admin_required
+def broadcast(request):
+    """Admin-only: send one message to every account at once. No other role can do this -
+    everyone else may only message someone they're linked with on a donation."""
+    form = BroadcastForm(request.POST or None)
+    sent = None
+    if request.method == "POST" and form.is_valid():
+        sent = services.broadcast_message(request.user, form.cleaned_data["body"])
+        form = BroadcastForm()
+    return render(request, "inbox/broadcast.html", {"form": form, "sent": sent})
 
 
 @login_required

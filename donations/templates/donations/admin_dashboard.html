@@ -5,30 +5,106 @@
 {% include "partials/dashboard_hello.html" with title="Admin dashboard" %}
 <div class="dash-actions mb-4">
   <a class="btn btn-forest" href="{% url 'donations:feedback' %}"><i class="bi bi-flag"></i> Feedback &amp; issues{% if counts.open_issues %} <span class="nav-badge" style="background:#fff;color:#073b2a">{{ counts.open_issues }}</span>{% endif %}</a>
+  <a class="btn btn-outline-forest" href="{% url 'accounts:approvals' %}"><i class="bi bi-person-check"></i> Approvals{% if counts.awaiting_approval %} <span class="nav-badge">{{ counts.awaiting_approval }}</span>{% endif %}</a>
+  <a class="btn btn-outline-forest" href="{% url 'inbox:broadcast' %}"><i class="bi bi-broadcast"></i> Message everyone</a>
 </div>
 
 <div class="row g-3 mb-4">
   <div class="col-6 col-lg-3">
     <div class="stat-card stat-combo">
+      <i class="bi bi-hourglass-split stat-icon"></i>
       <div class="stat-sub"><div class="stat-value">{{ counts.pending }}</div><div class="stat-label">Pending</div></div>
       <div class="stat-sub"><div class="stat-value">{{ counts.in_progress }}</div><div class="stat-label">In progress</div></div>
+      <div class="stat-desc">Listings waiting to be matched or on their way right now.</div>
     </div>
   </div>
-  <div class="col-6 col-lg-3"><div class="stat-card stat-good"><div class="stat-value">{{ counts.delivered }}</div><div class="stat-label">Delivered</div></div></div>
-  <div class="col-6 col-lg-3"><div class="stat-card stat-warn"><div class="stat-value">{{ counts.live_offers }}</div><div class="stat-label">Live offers</div></div></div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card stat-good">
+      <i class="bi bi-check-circle stat-icon"></i>
+      <div class="stat-value">{{ counts.delivered }}</div><div class="stat-label">Delivered</div>
+      <div class="stat-desc">Donations that made it all the way to a pantry.</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="stat-card stat-warn">
+      <i class="bi bi-lightning-charge stat-icon"></i>
+      <div class="stat-value">{{ counts.live_offers }}</div><div class="stat-label">Live offers</div>
+      <div class="stat-desc">Open offers to a driver or pantry, still inside their time window.</div>
+    </div>
+  </div>
   <div class="col-6 col-lg-3">
     <div class="stat-card stat-combo stat-bad">
+      <i class="bi bi-exclamation-triangle stat-icon"></i>
       <div class="stat-sub"><div class="stat-value">{{ counts.expired }}</div><div class="stat-label">Expired</div></div>
       <div class="stat-sub"><div class="stat-value">{{ counts.cancelled }}</div><div class="stat-label">Cancelled</div></div>
+      <div class="stat-desc">Listings that timed out or were called off before delivery.</div>
     </div>
   </div>
 </div>
+
 <div class="row g-3 mb-4">
   <div class="col-12">
     <div class="stat-card stat-combo stat-info">
+      <i class="bi bi-people stat-icon"></i>
       <div class="stat-sub"><div class="stat-value">{{ counts.donors }}</div><div class="stat-label">Donors</div></div>
       <div class="stat-sub"><div class="stat-value">{{ counts.recipients }}</div><div class="stat-label">Recipients</div></div>
       <div class="stat-sub"><div class="stat-value">{{ counts.drivers }}</div><div class="stat-label">Drivers</div></div>
+      <div class="stat-desc">Everyone registered on FoodBridge right now, by role.</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-lg-6">
+    <div class="app-card h-100">
+      <div class="admin-card-head">
+        <h5>Awaiting approval</h5>
+        {% if counts.awaiting_approval %}<span class="chip chip-soft">{{ counts.awaiting_approval }} waiting</span>{% endif %}
+      </div>
+      {% for u in pending_queue %}
+        <div class="queue-item">
+          <span class="people-avatar">
+            {% if u.avatar %}<img src="{{ u.avatar.url }}" alt="{{ u.display_name }}">{% else %}{{ u.display_name|slice:":1"|upper }}{% endif %}
+          </span>
+          <span class="queue-main">
+            <strong>{{ u.display_name }}</strong>
+            <span class="queue-sub">
+              <span class="chip chip-soft role-chip-{{ u.role|lower }}">{{ u.get_role_display }}</span>
+              · {{ u.area_display|default:"No area set" }} · joined {{ u.date_joined|timesince }} ago
+            </span>
+          </span>
+          <a class="btn btn-sm btn-outline-forest" href="{% url 'accounts:approvals' %}"><i class="bi bi-arrow-right"></i></a>
+        </div>
+      {% empty %}
+        <p class="text-muted mb-0 py-3">No one is waiting on approval right now.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="app-card h-100">
+      <div class="admin-card-head">
+        <h5>Open issues</h5>
+        {% if counts.open_issues %}<span class="chip chip-soft" style="background:#fdecec;color:#9a2b2b">{{ counts.open_issues }} flagged</span>{% endif %}
+      </div>
+      {% for f in open_issues %}
+        <div class="queue-item">
+          <span class="people-avatar">
+            {% if f.author.avatar %}<img src="{{ f.author.avatar.url }}" alt="{{ f.author.display_name }}">{% else %}{{ f.author.display_name|slice:":1"|upper }}{% endif %}
+          </span>
+          <span class="queue-main">
+            <strong>{{ f.author.display_name }}</strong>
+            <span class="queue-sub">
+              <span class="chip chip-soft role-chip-{{ f.author.role|lower }}">{{ f.author.get_role_display }}</span>
+              on donation #{{ f.donation_id }} · {{ f.created_at|timesince }} ago
+            </span>
+            {% if f.comment %}<span class="queue-sub d-block mt-1">"{{ f.comment|truncatechars:80 }}"</span>{% endif %}
+          </span>
+          <a class="btn btn-sm btn-outline-forest" href="{{ f.donation.get_absolute_url }}"><i class="bi bi-arrow-right"></i></a>
+        </div>
+      {% empty %}
+        <p class="text-muted mb-0 py-3">No open issues. Everything delivered cleanly.</p>
+      {% endfor %}
     </div>
   </div>
 </div>

@@ -12,6 +12,10 @@ class Message(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="received_messages",
     )
     body = models.TextField(max_length=2000)
+    is_broadcast = models.BooleanField(
+        default=False,
+        help_text="Sent to every account at once by an Admin, rather than a direct one-to-one message.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     read_at = models.DateTimeField(null=True, blank=True)
 
@@ -42,6 +46,7 @@ class Notification(models.Model):
         OPENED = "opened", "Open to all"
         APPROVAL = "approval", "Account approval"
         ISSUE = "issue", "Reported issue"
+        LIVE_TRACKING = "live_tracking", "Live tracking (coming soon)"
 
     ICONS = {
         "new_donation": "bi-basket2",
@@ -59,6 +64,7 @@ class Notification(models.Model):
         "opened": "bi-broadcast",
         "approval": "bi-person-check",
         "issue": "bi-flag",
+        "live_tracking": "bi-geo-alt",
     }
 
     user = models.ForeignKey(

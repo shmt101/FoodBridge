@@ -7,7 +7,7 @@ from .validators import validate_street_address
 
 
 class SignUpForm(UserCreationForm):
-    """Signup form with role selection — this is the RBAC entry point.
+    """Signup form with role selection: this is the RBAC entry point.
 
     New accounts are created in the 'pending' state; an admin has to approve them
     before they can use the portal.
@@ -62,7 +62,7 @@ class SignUpForm(UserCreationForm):
 
 
 class ProfileForm(forms.ModelForm):
-    """The 'profile manager' — every role edits the same fields."""
+    """The 'profile manager': every role edits the same fields."""
 
     area = forms.ChoiceField(choices=area_choices(), required=False, label="Your area")
     address = forms.CharField(max_length=255, required=False, label="Street address",

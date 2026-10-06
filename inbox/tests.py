@@ -72,7 +72,13 @@ class NotificationFlowTests(TestCase):
             self.assertEqual(Notification.objects.filter(user=u).count(), 1)
         self.assertIn("Bread", self.texts(self.driver_a)[0])
         self.assertIn("12 kg", self.texts(self.driver_a)[0])
-        self.assertEqual(Notification.objects.filter(user__in=[self.donor_a, self.donor_b]).count(), 0)
+        # The donor gets no "offer"/"new listing" chatter about their own donation - only
+        # the one live-tracking heads-up every lister gets.
+        self.assertEqual(
+            Notification.objects.filter(user=self.donor_a).values_list("kind", flat=True)[0],
+            "live_tracking",
+        )
+        self.assertEqual(Notification.objects.filter(user=self.donor_b).count(), 0)
 
     def test_full_lifecycle_notifies_the_right_people(self):
         d = Donation.objects.create(donor=self.donor_a, food_item="Bread", quantity_kg=5)
@@ -179,6 +185,12 @@ class MessagingTests(TestCase):
         self.a = make_user("alice", User.Role.DONOR, first_name="Alice")
         self.b = make_user("bob", User.Role.DRIVER, first_name="Bob")
         self.c = make_user("carol", User.Role.RECIPIENT, first_name="Carol")
+        # Direct messaging is only allowed between people linked by a shared donation
+        # (or with an Admin) - this one donation links every pair of a/b/c for the tests
+        # below. Suppressed so it doesn't add stray notifications these tests don't expect.
+        with notifications_suppressed():
+            Donation.objects.create(donor=self.a, recipient=self.c, driver=self.b,
+                                    food_item="Bread", quantity_kg=5, status=Donation.Status.DELIVERED)
 
     def test_send_message_and_recipient_sees_unread_then_read(self):
         self.client.login(username="alice", password="pass12345")
@@ -262,6 +274,76 @@ class MessagingTests(TestCase):
         self.assertEqual(page.context["unread_notifications"], 0)
         self.assertContains(page, 'data-dash-panel="notifications" hidden')
         self.assertNotContains(page, 'data-dash-panel="messages" hidden')
+
+
+class MessagingLinkageTests(TestCase):
+    """Direct messaging is restricted: only people linked by a shared donation (donor,
+    recipient, driver, in any combination) may message each other directly. An Admin
+    can message - and broadcast to - anyone; nobody else can broadcast."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user("boss", password="pass12345", role="ADMIN", is_staff=True)
+        self.donor = make_user("d1", User.Role.DONOR)
+        self.pantry = make_user("r1", User.Role.RECIPIENT)
+        self.driver = make_user("dv1", User.Role.DRIVER)
+        self.stranger = make_user("s1", User.Role.RECIPIENT)  # shares no donation with anyone
+        with notifications_suppressed():
+            Donation.objects.create(donor=self.donor, recipient=self.pantry, driver=self.driver,
+                                    food_item="Rice", quantity_kg=4, status=Donation.Status.DELIVERED)
+
+    def login(self, u):
+        self.client.logout()
+        self.client.login(username=u.username, password="pass12345")
+
+    def test_unrelated_users_cannot_open_or_post_a_conversation(self):
+        self.login(self.donor)
+        self.assertEqual(self.client.get(reverse("inbox:conversation", args=[self.stranger.pk])).status_code, 403)
+        self.assertEqual(
+            self.client.post(reverse("inbox:conversation", args=[self.stranger.pk]), {"body": "hi"}).status_code,
+            403,
+        )
+        self.assertEqual(Message.objects.count(), 0)
+
+    def test_new_message_form_only_offers_linked_people_and_admins(self):
+        self.login(self.donor)
+        page = self.client.get(reverse("inbox:new"))
+        choices = set(page.context["form"].fields["recipient"].queryset)
+        self.assertEqual(choices, {self.pantry, self.driver, self.admin})
+        self.assertNotIn(self.stranger, choices)
+
+    def test_linked_users_can_message_each_other(self):
+        self.login(self.pantry)
+        resp = self.client.post(reverse("inbox:conversation", args=[self.driver.pk]), {"body": "On your way?"})
+        self.assertRedirects(resp, reverse("inbox:conversation", args=[self.driver.pk]))
+        self.assertEqual(Message.objects.filter(sender=self.pantry, recipient=self.driver).count(), 1)
+
+    def test_anyone_can_message_an_admin_even_without_a_shared_donation(self):
+        self.login(self.stranger)
+        resp = self.client.post(reverse("inbox:conversation", args=[self.admin.pk]), {"body": "Need help"})
+        self.assertRedirects(resp, reverse("inbox:conversation", args=[self.admin.pk]))
+
+    def test_admin_can_message_anyone_unlinked(self):
+        self.login(self.admin)
+        resp = self.client.post(reverse("inbox:conversation", args=[self.stranger.pk]), {"body": "Welcome!"})
+        self.assertRedirects(resp, reverse("inbox:conversation", args=[self.stranger.pk]))
+
+    def test_only_admin_can_broadcast(self):
+        for u in (self.donor, self.pantry, self.driver, self.stranger):
+            self.login(u)
+            self.assertEqual(self.client.get(reverse("inbox:broadcast")).status_code, 403)
+
+    def test_admin_broadcast_reaches_every_other_active_account(self):
+        self.login(self.admin)
+        resp = self.client.post(reverse("inbox:broadcast"), {"body": "Site maintenance tonight"})
+        self.assertEqual(resp.status_code, 200)
+        others = {self.donor, self.pantry, self.driver, self.stranger}
+        sent = Message.objects.filter(body="Site maintenance tonight", is_broadcast=True)
+        self.assertEqual(set(sent.values_list("recipient", flat=True)), {u.pk for u in others})
+        self.assertFalse(sent.filter(recipient=self.admin).exists())
+        # a broadcast recipient can now read it and reply to the admin
+        self.login(self.stranger)
+        thread = self.client.get(reverse("inbox:conversation", args=[self.admin.pk]))
+        self.assertContains(thread, "Site maintenance tonight")
 
 
 class DashboardGreetingTests(TestCase):
@@ -370,6 +452,8 @@ class PublicPagesTests(TestCase):
 
     def test_search_box_submits_to_live_donations(self):
         Donation.objects.create(donor=make_user("dd", User.Role.DONOR), food_item="Sourdough", quantity_kg=3)
+        make_user("searcher", User.Role.RECIPIENT)
+        self.client.login(username="searcher", password="pass12345")
         resp = self.client.get(reverse("donations:live"), {"q": "sourdough"})
         self.assertContains(resp, "Sourdough")
 

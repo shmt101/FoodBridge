@@ -43,3 +43,17 @@ def auditor_required(view_func):
             return view_func(request, *args, **kwargs)
         raise PermissionDenied("This page is only available to the auditor account.")
     return _wrapped
+
+
+def admin_or_auditor_required(view_func):
+    """Reports and CSV exports - Admins and the Auditor account (or a superuser), never a
+    plain Donor/Recipient/Driver."""
+
+    @wraps(view_func)
+    @login_required
+    def _wrapped(request, *args, **kwargs):
+        user = request.user
+        if user.is_superuser or user.is_auditor or user.is_admin_role():
+            return view_func(request, *args, **kwargs)
+        raise PermissionDenied("This page is only available to admins and the auditor account.")
+    return _wrapped

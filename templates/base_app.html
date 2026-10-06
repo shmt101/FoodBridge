@@ -54,6 +54,39 @@
     .stat-combo .stat-sub + .stat-sub{ border-left:1px solid #edf2ee; }
     .stat-combo .stat-value{ font-size:29px; }
     .stat-combo .stat-label{ font-size:13px; }
+    .stat-desc{ font-size:11.5px; color:#8aa398; margin-top:2px; }
+    .stat-card .stat-icon{
+      position:absolute; top:10px; right:12px; font-size:1.05rem; color:#c7d6cc; opacity:.8;
+    }
+
+    /* ---- admin dashboard: descriptive cards + avatars ---- */
+    .admin-card-head{ display:flex; align-items:center; justify-content:between; gap:10px; margin-bottom:14px; }
+    .admin-card-head h5{ margin:0; flex:1; }
+    .admin-card-head .chip{ flex:0 0 auto; }
+    .people-avatar{
+      width:40px; height:40px; border-radius:13px; flex:0 0 40px; display:grid; place-items:center;
+      background:linear-gradient(145deg,#d1f3dc,#77d998); color:#073b2a; font:800 .95rem 'Manrope',sans-serif;
+      overflow:hidden;
+    }
+    .people-avatar img{ width:100%; height:100%; object-fit:cover; }
+    .people-avatar.avatar-lg{ width:52px; height:52px; border-radius:16px; font-size:1.2rem; }
+    .queue-item{
+      display:flex; align-items:center; gap:12px; padding:10px 4px; border-bottom:1px solid #edf2ee;
+    }
+    .queue-item:last-child{ border-bottom:0; }
+    .queue-item .queue-main{ flex:1; min-width:0; }
+    .queue-item .queue-main strong{ display:block; font-size:.92rem; }
+    .queue-item .queue-sub{ font-size:.78rem; color:#7c8c82; }
+    .role-chip-donor{ background:#eafaf0; color:#0a6b3d; }
+    .role-chip-recipient{ background:#f3f0ff; color:#5b3fc7; }
+    .role-chip-driver{ background:#fff5e8; color:#9a5b00; }
+    .people-strip{ display:flex; align-items:center; }
+    .people-strip .people-avatar{ margin-left:-10px; border:2px solid #fff; }
+    .people-strip .people-avatar:first-child{ margin-left:0; }
+    .people-more{
+      width:40px; height:40px; border-radius:13px; flex:0 0 40px; display:grid; place-items:center;
+      background:#eef3ef; color:#5b6b62; font:800 .78rem 'Manrope',sans-serif; margin-left:-10px; border:2px solid #fff;
+    }
     .badge-status{
       display:inline-flex; align-items:center; gap:6px; padding:5px 12px 5px 10px; border-radius:20px;
       font-size:11px; font-weight:700; letter-spacing:.02em; text-transform:uppercase; border:1px solid transparent;
@@ -244,7 +277,7 @@
               <a class="nav-link{% if request.resolver_match.url_name == 'approvals' %} active{% endif %}" href="{% url 'accounts:approvals' %}"><i class="bi bi-person-check"></i> Approvals{% if pending_approvals %} <span class="nav-badge">{{ pending_approvals }}</span>{% endif %}</a>
               <a class="nav-link{% if request.resolver_match.url_name == 'manage_users' or request.resolver_match.url_name == 'add_user' %} active{% endif %}" href="{% url 'accounts:manage_users' %}"><i class="bi bi-people"></i> Users</a>
             {% endif %}
-            {% if user.is_auditor or user.is_superuser %}
+            {% if user.is_auditor or user.is_superuser or user.is_admin_role %}
               <span class="nav-divider"></span>
               <a class="nav-link{% if request.resolver_match.url_name and 'report' in request.resolver_match.url_name %} active{% endif %}" href="{% url 'donations:partnership_report' %}"><i class="bi bi-bar-chart-line"></i> Reports</a>
             {% endif %}
