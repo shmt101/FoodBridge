@@ -326,6 +326,16 @@ class PublicPagesTests(TestCase):
         self.assertNotIn('id="team"', html)
         self.assertEqual(self.client.get(reverse("about")).status_code, 200)
 
+    def test_home_hero_shows_the_showcase_box_instead_of_the_static_illustration(self):
+        donor = make_user("showcasedonor2", User.Role.DONOR, area="nsw-newtown")
+        Donation.objects.create(donor=donor, food_item="Bread", quantity_kg=5,
+                                food_category="bakery", pickup_area="nsw-newtown", safety_confirmed=True)
+        html = self.client.get(reverse("home")).content.decode()
+        self.assertIn('id="showcaseBox"', html)
+        self.assertNotIn("foodbridge-hero.png", html)
+        self.assertNotIn("showcase-section", html)  # the separate section below is gone on this page
+        self.assertIn("Bakery", html)
+
     def test_home_nav_when_logged_in(self):
         make_user("u1", User.Role.DONOR)
         self.client.login(username="u1", password="pass12345")

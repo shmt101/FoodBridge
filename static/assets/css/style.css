@@ -104,6 +104,13 @@ html.landing-page{scroll-padding-top:0}
 .showcase-dots{position:absolute;top:1.6rem;right:1.8rem;display:flex;gap:6px;z-index:2}
 .showcase-dots span{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.4);transition:background .3s ease,transform .3s ease}
 .showcase-dots span.active{background:#fff;transform:scale(1.3)}
+.hero-showcase-box{min-height:400px}
+.showcase-eyebrow{position:absolute;top:1.7rem;left:2.1rem;z-index:2;display:inline-flex;align-items:center;gap:7px;
+  background:rgba(255,255,255,.22);backdrop-filter:blur(4px);color:#fff;font-weight:800;font-size:.68rem;
+  letter-spacing:.05em;text-transform:uppercase;padding:.35rem .75rem;border-radius:999px}
+.showcase-eyebrow span{width:6px;height:6px;border-radius:50%;background:#fff}
+.showcase-title{position:absolute;top:3.6rem;left:2.1rem;right:2.1rem;z-index:2;color:#fff;
+  font-family:'Manrope',sans-serif;font-weight:800;font-size:1.3rem;line-height:1.3}
 @media(max-width:900px){.showcase-wrap{grid-template-columns:1fr}.showcase-copy p{max-width:none}.showcase-box{min-height:260px}}
 .hero-legal-links{margin:.6rem 0 0;font-size:.82rem;color:var(--fb-muted)}
 .hero-legal-links a{color:var(--fb-muted);text-decoration:underline}
