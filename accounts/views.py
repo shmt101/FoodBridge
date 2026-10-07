@@ -3,6 +3,7 @@ import json
 import urllib.parse
 import urllib.request
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import login
 from django.core.cache import cache
@@ -19,7 +20,7 @@ from inbox import services as notes
 
 from . import approvals
 from .decorators import admin_required
-from .forms import AddStaffUserForm, ProfileForm, SignUpForm
+from .forms import AddStaffUserForm, FoodBridgeLoginForm, ProfileForm, SignUpForm
 from .models import User
 
 
@@ -34,9 +35,15 @@ def _throttle_key(request, username):
 
 
 class RoleAwareLoginView(LoginView):
-    """Login with a simple brute-force guard: 5 wrong passwords locks that user+IP for 15 minutes."""
+    """Login with a simple brute-force guard: 5 wrong passwords locks that user+IP for 15 minutes.
+
+    Also carries the "Keep me logged in" checkbox: ticked, the session is extended to
+    REMEMBER_ME_SESSION_AGE; left unticked, it keeps the short, sliding SESSION_COOKIE_AGE
+    idle timeout set in settings.py.
+    """
 
     template_name = "accounts/login.html"
+    authentication_form = FoodBridgeLoginForm
 
     def post(self, request, *args, **kwargs):
         username = request.POST.get("username", "")
@@ -54,7 +61,12 @@ class RoleAwareLoginView(LoginView):
 
     def form_valid(self, form):
         cache.delete(_throttle_key(self.request, self.request.POST.get("username", "")))
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        if form.cleaned_data.get("remember_me"):
+            self.request.session.set_expiry(settings.REMEMBER_ME_SESSION_AGE)
+        else:
+            self.request.session.set_expiry(settings.SESSION_COOKIE_AGE)
+        return response
 
     def get_form(self, form_class=None):
         form = super().get_form(form_class)

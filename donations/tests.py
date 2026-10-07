@@ -3,6 +3,7 @@ import unittest.mock as unittest_mock
 from datetime import timedelta
 from decimal import Decimal
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -790,6 +791,28 @@ class SecurityAndValidationTests(TestCase):
     def test_legal_pages_are_public(self):
         for name in ("privacy", "terms"):
             self.assertContains(self.client.get(reverse(name)), "isn't legal advice")
+
+
+class SessionTimeoutAndRememberMeTests(TestCase):
+    """Plain login gets a short, sliding idle timeout; "Keep me logged in" extends it."""
+
+    def setUp(self):
+        make_user("alice", User.Role.DONOR)
+
+    def test_plain_login_gets_the_short_session_timeout(self):
+        self.client.post(reverse("accounts:login"), {"username": "alice", "password": PW})
+        self.assertEqual(self.client.session.get_expiry_age(), settings.SESSION_COOKIE_AGE)
+
+    def test_remember_me_extends_the_session(self):
+        self.client.post(reverse("accounts:login"),
+                         {"username": "alice", "password": PW, "remember_me": "on"})
+        self.assertEqual(self.client.session.get_expiry_age(), settings.REMEMBER_ME_SESSION_AGE)
+        self.assertGreater(settings.REMEMBER_ME_SESSION_AGE, settings.SESSION_COOKIE_AGE)
+
+    def test_remember_me_checkbox_is_on_the_login_page(self):
+        page = self.client.get(reverse("accounts:login"))
+        self.assertContains(page, "Keep me logged in")
+        self.assertContains(page, 'name="remember_me"')
 
 
 class ManageUsersTests(TestCase):

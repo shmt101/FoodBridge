@@ -127,6 +127,17 @@ LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'accounts:dashboard'
 LOGOUT_REDIRECT_URL = 'home'
 
+# ---- Session timeout / "Keep me logged in" -----------------------------------
+# A normal login (checkbox left unticked) is idle-timed-out after this many
+# seconds of inactivity. SESSION_SAVE_EVERY_REQUEST makes this a *sliding*
+# timeout - every page view resets the clock - rather than a hard cutoff.
+SESSION_COOKIE_AGE = 30 * 60          # 30 minutes
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+# Ticking "Keep me logged in" on the login page extends the session to this
+# many seconds instead (see accounts.views.RoleAwareLoginView.form_valid).
+REMEMBER_ME_SESSION_AGE = 14 * 24 * 60 * 60   # 14 days
+
 CSRF_TRUSTED_ORIGINS = [f"https://{h}" for h in ALLOWED_HOSTS if h not in ("127.0.0.1", "localhost")]
 
 if not DEBUG:

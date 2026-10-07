@@ -21,7 +21,12 @@
           <div class="field-icon has-toggle"><i class="bi bi-lock lead-i"></i>{{ form.password }}
             <button type="button" class="pw-toggle" data-toggle-password="{{ form.password.id_for_label }}" aria-label="Show or hide password"><i class="bi bi-eye"></i></button></div>
         </div>
-        <div class="text-end mb-3" style="margin-top:-1rem"><a class="btn-link-quiet" href="{% url 'accounts:password_reset' %}">Forgot password?</a></div>
+        <div class="d-flex justify-content-between align-items-center mb-3" style="margin-top:-1rem">
+          <label class="form-check-label small text-muted" for="{{ form.remember_me.id_for_label }}">
+            {{ form.remember_me }} Keep me logged in
+          </label>
+          <a class="btn-link-quiet" href="{% url 'accounts:password_reset' %}">Forgot password?</a>
+        </div>
         <button class="btn btn-forest w-100 py-2 fw-bold" type="submit">Log in <i class="bi bi-arrow-right"></i></button>
       </form>
       <p class="auth-foot mb-1">New to FoodBridge? <a href="{% url 'accounts:signup' %}">Create an account</a></p>

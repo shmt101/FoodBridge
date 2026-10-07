@@ -1,9 +1,23 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 
 from .areas import area_choices
 from .models import User
 from .validators import validate_street_address
+
+
+class FoodBridgeLoginForm(AuthenticationForm):
+    """The normal login form, plus a "Keep me logged in" checkbox.
+
+    Left unticked, the session times out after a short period of inactivity
+    (see SESSION_COOKIE_AGE). Ticked, it's extended to REMEMBER_ME_SESSION_AGE -
+    see RoleAwareLoginView.form_valid, which actually applies the chosen length.
+    """
+
+    remember_me = forms.BooleanField(
+        required=False, label="Keep me logged in",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input"}),
+    )
 
 
 class SignUpForm(UserCreationForm):
